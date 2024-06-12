@@ -2,20 +2,20 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
+    build:
+      context: .
+      dockerfile: Dockerfile.mongo
     ports:
       - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-
+    
   airflow:
-    image: apache/airflow:2.2.5
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
     container_name: airflow
+    platform: linux/x86_64
     ports:
       - "8080:8080"
-    platform: linux/amd64
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////tmp/airflow.db
@@ -24,10 +24,6 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-    command: >
-      bash -c "airflow db init &&
-               airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
-               airflow webserver & airflow scheduler"
     depends_on:
       - mongodb
 
