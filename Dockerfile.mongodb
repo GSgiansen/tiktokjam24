@@ -1,0 +1,10 @@
+FROM mongo:latest
+
+# Install MongoDB tools
+RUN apt-get update && apt-get install -y mongodb-clients
+
+# Set the working directory to /usr/src/app
+WORKDIR /usr/src/app
+
+# Start MongoDB shell
+CMD ["mongosh"]
