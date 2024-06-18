@@ -14,17 +14,11 @@ def prep_data():
     print('Data Preprocessing')
     # I want to read the csv file and do data cleaning only in this funciton
     # Read csv file
-<<<<<<< HEAD
     df = pd.read_csv('data/data.csv')
     # Drop missing values
     df = df.dropna()
     # save the cleaned data to a new csv file
     df.to_csv('data/cleaned_data.csv', index=False)
-=======
-    # df = pd.read_csv('data/data.csv')
-    # # Drop missing values
-    # df = df.dropna()
->>>>>>> 210d77b (Fix dockerfile for apache airflow)
     # Split the data into features and target
 
 
