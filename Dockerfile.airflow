@@ -1,6 +1,0 @@
-FROM apache/airflow:2.2.5
-COPY requirements.txt .
-USER root
-RUN pip install pymongo
-RUN pip install -r requirements.txt
-USER airflow
