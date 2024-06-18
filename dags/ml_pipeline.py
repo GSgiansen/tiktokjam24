@@ -1,6 +1,5 @@
 # Create DAG that runs the following tasks
 # Use the file from data folder to train a model
-
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
@@ -17,8 +16,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
 # Python function to clean, train the model
-
-
 def prep_data():
     print('Data Preprocessing')
     # I want to read the csv file and do data cleaning only in this funciton
@@ -26,6 +23,8 @@ def prep_data():
     df = pd.read_csv('data/data.csv')
     # Drop missing values
     df = df.dropna()
+    # save the cleaned data to a new csv file
+    df.to_csv('data/cleaned_data.csv', index=False)
     # Split the data into features and target
 
 
@@ -62,5 +61,3 @@ with DAG('ml_pipeline',
     get_metrics = PythonOperator(task_id="get metrics", python_callable=get_metrics)
 
     prep_and_clean >> split_data >> train_model >> predict >> get_metrics
-
-    
