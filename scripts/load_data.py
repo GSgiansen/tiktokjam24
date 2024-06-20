@@ -9,8 +9,8 @@ def load_data():
     test = data.drop(train.index)
 
     # Save train and test data
-    train.to_csv('data/train.csv', index=False)
-    test.to_csv('data/test.csv', index=False)
+    train.to_csv('../data/train.csv', index=False)
+    test.to_csv('../data/test.csv', index=False)
 
     print('Data loaded and split into train and test data')
 
