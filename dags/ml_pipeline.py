@@ -1,23 +1,52 @@
 # Create DAG that runs the following tasks
 # Use the file from data folder to train a model
 
-from datetime import datetime, timedelta
 from airflow import DAG
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
-
-import pandas as pd
+from datetime import datetime, timedelta
 import numpy as np
-# from sklearn.model_selection import train_test_split
-# from sklearn.linear_model import LinearRegression
+import pandas as pd
 
-# Python function to clean, train the model
+# Helper functions
 
-# greet example task
-def greet():
-    print('Hello World')
+def remove_whitespace(df):
+    """Remove leading and trailing whitespace from all string columns."""
+    for col in df.select_dtypes(include=['object']):
+        df[col] = df[col].str.strip()
+    return df
+
+def remove_duplicates(df):
+    """Remove duplicate rows from data."""
+    return df.drop_duplicates()
+
+def separate_nan_target(df):
+    """Separate rows with NaN values in the target column."""
+    target_col = df.columns[-1]
+    
+    data_with_target = df.dropna(subset=[target_col])
+    data_without_target = df[df[target_col].isna()]
+    
+    data_with_target.to_csv('data/data_with_target.csv', index=False)
+    data_without_target.to_csv('data/data_without_target.csv', index=False)
+    
+    print(f"Rows with target: {len(data_with_target)}")
+    print(f"Rows without target: {len(data_without_target)}")
+
+    return data_with_target
 
 def process_data(data):
+    """Preprocess features and target columns separately for training"""
     import pandas as pd
+
+    # remove whitespace
+    data = remove_whitespace(data)
+
+    # remove duplicates
+    data = remove_duplicates(data)
+
+    # separate nan rows in target
+    data = separate_nan_target(data)
 
     # split into features and target (target is last column)
     X = data.drop(data.columns[-1], axis=1)
@@ -33,36 +62,54 @@ def process_data(data):
     # process numerical features
     numerical = process_numerical_df(numerical)
 
-    # Assume no Nan rows in target
+    process_data = pd.concat([categorical, numerical, y], axis=1)
+    process_data = process_data.dropna()
 
-    return pd.concat([categorical, numerical, y], axis=1)
+    return process_data
 
 def process_categorical_df(df):
+    """Fill Nan values with mode for categorical features"""
     import pandas as pd
 
-    # Assume binary catergorical features
-    # Fill Nan with Mode
     for col in df.columns:
-        df[col] = df[col].fillna(df[col].mode()[0])
+        # Check if the column has a mode
+        if not df[col].mode().empty:
+            df[col] = df[col].fillna(df[col].mode()[0])
+        else:
+            # If no mode exists, fill with a placeholder value
+            df[col] = df[col].fillna('Unknown')
 
     return df
 
 def process_numerical_df(df):
+    """Fill Nan values with mean and scale numerical features"""
     import pandas as pd
     import sklearn.preprocessing as preprocessing
 
-    # Fill Nan with Mean
     for col in df.columns:
-        df[col] = df[col].fillna(df[col].mean())
+            # Convert column to numeric, coercing errors to NaN
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            # Replace infinite values with NaN
+            df[col] = df[col].replace([np.inf, -np.inf], np.nan)
+            
+            # Calculate mean, ignoring NaN values
+            col_mean = df[col].mean()
+            
+            if pd.isna(col_mean):
+                # If mean is NaN (all values are NaN), fill with 0
+                df[col] = df[col].fillna(0)
+            else:
+                df[col] = df[col].fillna(col_mean)
 
     # Scale
     scaler = preprocessing.StandardScaler()
-    df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
+    scaled_df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
 
-    return df
+    return scaled_df
 
 def train_model(df):
-
+    """Train model on preprocessed data"""
     # split into features and target (target is last column)
     X = df.drop(df.columns[-1], axis=1)
     y = df[df.columns[-1]]
@@ -70,15 +117,13 @@ def train_model(df):
     # choose model and data
     x, model = choose_model(X, y)
 
-    # count nan values
-    print(y.isna().sum())
-
     # fit model
     model = fit_model(model, x, y)
 
     return model
 
 def choose_model(X, y):
+    """Choose model based on target type"""
     import sklearn.linear_model as linear_model
 
     # if y is numerical
@@ -96,6 +141,8 @@ def choose_model(X, y):
     return x, model
 
 def fit_model(model, X, y):
+    """Fit model to data"""
+
     # can implement CV here in future
 
     model.fit(X, y)
@@ -103,6 +150,7 @@ def fit_model(model, X, y):
     return model
 
 def test_model(model, test):
+    """Test trained model on test data and return metric"""
     import pandas as pd
     import numpy as np
 
@@ -114,22 +162,26 @@ def test_model(model, test):
     y_test = test[test.columns[-1]]
 
     # test model
-    if y_test.dtype in ['int64', 'float64']:
+    if y_test.dtype in [np.int64, np.float64]:
         y_pred = model.predict(X_test.select_dtypes(exclude=['object']))
         metric = get_metric(y_test, y_pred)
     else:
-        y_pred = model.predict(X_test)
+        y_pred = model.predict(X_test.select_dtypes(exclude=['object']))
         metric = get_metric(y_test, y_pred)
 
     return metric
 
 def get_metric(y_true, y_pred):
+    """Return metric based on target type"""
+
     from sklearn.metrics import mean_squared_error, accuracy_score
 
     if y_true.dtype in ['int64', 'float64']:
         return mean_squared_error(y_true, y_pred)
     else:
         return accuracy_score(y_true, y_pred)
+    
+    # can implement more metrics in future
 
 
 ## PIPELINE ##
@@ -179,12 +231,33 @@ def train_and_test_model():
     print(f'Model tested with metric: {metric}')
 
     # Save model to /data
-    # import joblib
-    # joblib.dump(model, 'data/model.pkl')
+    import joblib
+    joblib.dump(model, 'data/model.pkl')
 
-    # print('Model saved')
+    print('Model saved')
 
     print(metric)
+
+def predict():
+    # Load model
+    import joblib
+    model = joblib.load('data/model.pkl')
+
+    # Load predict data
+    data = pd.read_csv('data/predict.csv')
+
+    # Process data
+    data = process_data(data)
+
+    # Make predictions
+    X = data.drop(data.columns[-1], axis=1)
+    predictions = model.predict(X.select_dtypes(exclude=['object']))
+
+    # Save predictions to the same file
+    data['predictions'] = predictions
+    data.to_csv('data/predict.csv', index=False)
+
+    print('Predictions saved')
 
 with DAG(
     default_args = {
@@ -197,10 +270,7 @@ with DAG(
     start_date=datetime(2024, 6, 20),
     dag_id='ml_pipeline',
 ) as dag:
-    # task1 = PythonOperator(
-    #     task_id='greet',
-    #     python_callable=greet
-    # )
+    start = DummyOperator(task_id='start')
 
     prepare_data = PythonOperator(
         task_id='prepare_data',
@@ -222,7 +292,13 @@ with DAG(
         python_callable=train_and_test_model
     )
 
-    prepare_data >> [preprocess_train_data, preprocess_test_data] >> train_and_test_model
+    end = DummyOperator(task_id='end')
+
+    start >> \
+    prepare_data >> \
+    [preprocess_train_data, preprocess_test_data] >> \
+    train_and_test_model >> \
+    end
 
 
     
