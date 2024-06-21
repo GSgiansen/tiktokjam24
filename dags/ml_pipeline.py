@@ -292,12 +292,18 @@ with DAG(
         python_callable=train_and_test_model
     )
 
+    predict = PythonOperator(
+        task_id='predict',
+        python_callable=predict
+    )
+
     end = DummyOperator(task_id='end')
 
     start >> \
     prepare_data >> \
     [preprocess_train_data, preprocess_test_data] >> \
     train_and_test_model >> \
+    predict >> \
     end
 
 
