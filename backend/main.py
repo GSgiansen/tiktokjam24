@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users, classification_models
+from routers import users, classification_models, regression_models
 from db.supabase import get_supabase_client
 from typing import Union
 
@@ -15,6 +15,7 @@ app = FastAPI()
 # Include the routers
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(classification_models.router, prefix="/classification_models", tags=["classification_models"])
+app.include_router(regression_models.router, prefix="/regression_models", tags=["regression_models"])
 # Initialize supabase client
 supabase = get_supabase_client()
 # Defining the host is optional and defaults to /api/v1
