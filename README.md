@@ -16,7 +16,8 @@ Repo for team RCH4CKERS
 
 # Backend 
 
-1. Run pip install fastapi supabase
+1. Run pip install fastapi supabase apache-airflow-client
 2. Obtain supabase credentials via the connect button
 3. Add to local .env file in backend folder under SUPABASE_URL and SUPABASE_KEY
 4. Run the fastapi backend with `fastapi dev main.py`
+5. Ctrl + C to stop
