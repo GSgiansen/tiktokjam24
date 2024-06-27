@@ -16,6 +16,7 @@ Repo for team RCH4CKERS
 
 # Backend 
 
-1. Obtain supabase credentials
-2. add credentials to local .env file in backend folder
-3. run the fastapi backend with `fastapi dev main.py`
+1. Run pip install fastapi supabase
+2. Obtain supabase credentials via the connect button
+3. Add to local .env file in backend folder under SUPABASE_URL and SUPABASE_KEY
+4. Run the fastapi backend with `fastapi dev main.py`
