@@ -68,3 +68,33 @@ async def trigger_dag(request: TriggerDagRequest):
             return {"message": "DAG triggered successfully", "dag_run_id": api_response.dag_run_id}
     except client.ApiException as e:
         print("Exception when calling DAGRunApi->post_dag_run: %s\n" % e)
+
+@app.post("/process_csv/")
+async def process_csv(file_path: str, columns: list[str]):
+    try:
+        # Step 2: Download the CSV file
+        response = supabase.storage.from_('your_bucket_name').download(file_path)
+        if not response:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Read the CSV file into a pandas DataFrame
+        csv_file = BytesIO(response)
+        df = pd.read_csv(csv_file)
+
+        # Step 3: Select the specified columns
+        selected_columns = df[columns]
+
+        # Save the processed DataFrame to a new CSV file
+        processed_csv_file = BytesIO()
+        selected_columns.to_csv(processed_csv_file, index=False)
+        processed_csv_file.seek(0)  # Reset the file pointer to the beginning
+
+        # Step 4: Upload the processed CSV file back to Supabase
+        upload_response = supabase.storage.from_('your_bucket_name').upload('processed_file.csv', processed_csv_file)
+        if not upload_response:
+            raise HTTPException(status_code=500, detail="Failed to upload processed file")
+
+        return {"message": "File processed and uploaded successfully"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
