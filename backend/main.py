@@ -83,7 +83,6 @@ async def process_csv(file_path: str, columns: list[str] = Query(...)):
 
         if not res:
             raise HTTPException(status_code=404, detail="File not found")
-        print("at here")
         # Read the CSV file into a pandas DataFrame
         csv_file = res
         df = pd.read_csv('datatest')
