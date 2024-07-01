@@ -11,17 +11,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "@/components/upload/form-schema";
 import { z } from "zod";
 import SideBar from "@/components/SideBar";
-import FormStep from "@/components/upload/form-step";
 import UploadStep from "@/components/upload/upload-step";
 import ColumnStep from "@/components/upload/column-step";
+import ProjectInfoStep from "@/components/upload/project-info-step";
+import SummaryStep from "@/components/upload/summary-step";
 
 const UploadPage = () => {
   const initialValues: FormItems = {
     name: "",
-    email: "",
-    phone: "",
-    plan: "arcade",
-    yearly: false,
+    csvFile: undefined,
+    columns: [],
   };
   const [formData, setFormData] = useState(initialValues);
 
@@ -36,15 +35,13 @@ const UploadPage = () => {
     steps,
     goTo,
     showSuccessMsg,
-  } = useMultiplestepForm(4);
+  } = useMultiplestepForm(5);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: "",
-      phone: "",
-      plan: "arcade",
-      yearly: false,
+      csvFile: undefined,
+      columns: [],
     },
   });
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -55,50 +52,10 @@ const UploadPage = () => {
     nextStep();
   }
   function updateForm(fieldToUpdate: Partial<FormItems>) {
-    const { name, email, phone } = fieldToUpdate;
-
-    if (name && name.trim().length < 3) {
-      setErrors((prevState) => ({
-        ...prevState,
-        name: "Name should be at least 3 characters long",
-      }));
-    } else if (name && name.trim().length > 15) {
-      setErrors((prevState) => ({
-        ...prevState,
-        name: "Name should be no longer than 15 characters",
-      }));
-    } else {
-      setErrors((prevState) => ({
-        ...prevState,
-        name: "",
-      }));
-    }
-
-    if (email && !/\S+@\S+\.\S+/.test(email)) {
-      setErrors((prevState) => ({
-        ...prevState,
-        email: "Please enter a valid email address",
-      }));
-    } else {
-      setErrors((prevState) => ({
-        ...prevState,
-        email: "",
-      }));
-    }
-
-    if (phone && !/^[0-9]{10}$/.test(phone)) {
-      setErrors((prevState) => ({
-        ...prevState,
-        phone: "Please enter a valid 10-digit phone number",
-      }));
-    } else {
-      setErrors((prevState) => ({
-        ...prevState,
-        phone: "",
-      }));
-    }
-
+    const { name, csvFile, columns } = fieldToUpdate;
+    console.log(fieldToUpdate);
     setFormData({ ...formData, ...fieldToUpdate });
+    console.log(formData);
   }
   return (
     <div className="flex flex-row gap-3 p-4">
@@ -107,17 +64,27 @@ const UploadPage = () => {
         <Form {...form}>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <AnimatePresence mode="wait">
-              {currentStepIndex === 0 && <FormStep {...formData} form={form} />}
+              {currentStepIndex === 0 && (
+                <ProjectInfoStep
+                  {...formData}
+                  form={form}
+                  updateForm={updateForm}
+                />
+              )}
               {currentStepIndex === 1 && (
-                <UploadStep {...formData} form={form} />
+                <UploadStep {...formData} form={form} updateForm={updateForm} />
               )}
               {currentStepIndex === 2 && (
-                <div>
-                  <ColumnStep {...formData} form={form} />
-                </div>
+                <ColumnStep {...formData} form={form} updateForm={updateForm} />
               )}
-              {currentStepIndex === 3 && <div>3</div>}
-              {currentStepIndex === 4 && <div>4</div>}
+              {currentStepIndex === 3 && (
+                <SummaryStep
+                  {...formData}
+                  form={form}
+                  updateForm={updateForm}
+                />
+              )}
+              {currentStepIndex === 4 && <>hello</>}
             </AnimatePresence>
             <div className="w-full items-center flex justify-between ">
               <Button

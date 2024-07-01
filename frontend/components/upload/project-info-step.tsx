@@ -1,4 +1,3 @@
-import { FormItems } from "@/types/formItems";
 import { Input } from "../ui/input";
 import {
   FormControl,
@@ -9,7 +8,7 @@ import {
 } from "../ui/form";
 import { StepProps } from "./step-props";
 
-const FormStep = ({ form }: StepProps) => {
+const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -25,7 +24,15 @@ const FormStep = ({ form }: StepProps) => {
           <FormItem>
             <FormLabel>Project Name</FormLabel>
             <FormControl>
-              <Input placeholder="Project Name" {...field} />
+              <Input
+                autoFocus
+                type="text"
+                id="name"
+                placeholder="Project Name"
+                {...field}
+                value={name}
+                onChange={(e) => updateForm({ name: e.target.value })}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -35,4 +42,4 @@ const FormStep = ({ form }: StepProps) => {
   );
 };
 
-export default FormStep;
+export default ProjectInfoStep;

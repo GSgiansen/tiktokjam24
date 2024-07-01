@@ -4,8 +4,6 @@ import { z } from "zod";
 
 export const formSchema = z.object({
   name: z.string().min(2).max(50),
-  email: z.string().max(50),
-  phone: z.string().min(2).max(50),
-  plan: z.string().min(2).max(50),
-  yearly: z.boolean(),
+  csvFile: z.any().refine((val) => val.length > 0, "File is required"),
+  columns: z.array(z.string()),
 });
