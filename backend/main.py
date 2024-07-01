@@ -1,3 +1,5 @@
+from http.client import HTTPException
+from io import BytesIO
 from fastapi import FastAPI
 from routers import users, classification_models, regression_models
 from db.supabase import get_supabase_client
@@ -10,6 +12,7 @@ from airflow_client.client.model.dag_run import DAGRun
 from airflow_client.client.model.config import Config
 from airflow_client.client.model.error import Error
 from pydantic import BaseModel
+import pandas as pd
 
 app = FastAPI()
 # Include the routers
@@ -73,7 +76,8 @@ async def trigger_dag(request: TriggerDagRequest):
 async def process_csv(file_path: str, columns: list[str]):
     try:
         # Step 2: Download the CSV file
-        response = supabase.storage.from_('your_bucket_name').download(file_path)
+        
+        response = supabase.storage.from_('public_csv').download(file_path)
         if not response:
             raise HTTPException(status_code=404, detail="File not found")
 
@@ -90,7 +94,7 @@ async def process_csv(file_path: str, columns: list[str]):
         processed_csv_file.seek(0)  # Reset the file pointer to the beginning
 
         # Step 4: Upload the processed CSV file back to Supabase
-        upload_response = supabase.storage.from_('your_bucket_name').upload('processed_file.csv', processed_csv_file)
+        upload_response = supabase.storage.from_('public_csv').upload('processed_file.csv', processed_csv_file)
         if not upload_response:
             raise HTTPException(status_code=500, detail="Failed to upload processed file")
 
