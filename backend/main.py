@@ -1,9 +1,11 @@
 from http.client import HTTPException
 from io import BytesIO
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException
+import pandas as pd, Query
 from routers import users, classification_models, regression_models
 from db.supabase import get_supabase_client
 from typing import Union
+from io import BytesIO
 
 import airflow_client.client as client
 from airflow_client.client.api import config_api
