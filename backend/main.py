@@ -1,6 +1,6 @@
 from http.client import HTTPException
 from io import BytesIO
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from routers import users, classification_models, regression_models
 from db.supabase import get_supabase_client
 from typing import Union
@@ -73,17 +73,20 @@ async def trigger_dag(request: TriggerDagRequest):
         print("Exception when calling DAGRunApi->post_dag_run: %s\n" % e)
 
 @app.post("/process_csv/")
-async def process_csv(file_path: str, columns: list[str]):
+async def process_csv(file_path: str, columns: list[str] = Query(...)):
     try:
         # Step 2: Download the CSV file
-        
-        response = supabase.storage.from_('public_csv').download(file_path)
-        if not response:
-            raise HTTPException(status_code=404, detail="File not found")
 
+        with open("datatest", 'wb+') as f:
+            res = supabase.storage.from_('datamall').download(file_path)
+            f.write(res)
+
+        if not res:
+            raise HTTPException(status_code=404, detail="File not found")
+        print("at here")
         # Read the CSV file into a pandas DataFrame
-        csv_file = BytesIO(response)
-        df = pd.read_csv(csv_file)
+        csv_file = res
+        df = pd.read_csv('datatest')
 
         # Step 3: Select the specified columns
         selected_columns = df[columns]
@@ -94,7 +97,7 @@ async def process_csv(file_path: str, columns: list[str]):
         processed_csv_file.seek(0)  # Reset the file pointer to the beginning
 
         # Step 4: Upload the processed CSV file back to Supabase
-        upload_response = supabase.storage.from_('public_csv').upload('processed_file.csv', processed_csv_file)
+        upload_response = supabase.storage.from_('datamall').upload('processed_file.csv', processed_csv_file.getvalue())
         if not upload_response:
             raise HTTPException(status_code=500, detail="Failed to upload processed file")
 
