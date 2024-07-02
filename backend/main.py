@@ -1,7 +1,7 @@
 from http.client import HTTPException
 from io import BytesIO
-from fastapi import FastAPI, HTTPException
-import pandas as pd, Query
+from fastapi import FastAPI, HTTPException, Query
+import pandas as pd
 from routers import users, classification_models, regression_models
 from db.supabase import get_supabase_client
 from typing import Union
@@ -74,35 +74,47 @@ async def trigger_dag(request: TriggerDagRequest):
     except client.ApiException as e:
         print("Exception when calling DAGRunApi->post_dag_run: %s\n" % e)
 
-@app.post("/process_csv/")
-async def process_csv(file_path: str, columns: list[str] = Query(...)):
-    try:
-        # Step 2: Download the CSV file
-
-        with open("datatest", 'wb+') as f:
-            res = supabase.storage.from_('datamall').download(file_path)
-            f.write(res)
-
-        if not res:
-            raise HTTPException(status_code=404, detail="File not found")
-        # Read the CSV file into a pandas DataFrame
-        csv_file = res
-        df = pd.read_csv('datatest')
-
+def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    try: 
         # Step 3: Select the specified columns
         selected_columns = df[columns]
-
         # Save the processed DataFrame to a new CSV file
         processed_csv_file = BytesIO()
         selected_columns.to_csv(processed_csv_file, index=False)
         processed_csv_file.seek(0)  # Reset the file pointer to the beginning
-
-        # Step 4: Upload the processed CSV file back to Supabase
         upload_response = supabase.storage.from_('datamall').upload('processed_file.csv', processed_csv_file.getvalue())
         if not upload_response:
-            raise HTTPException(status_code=500, detail="Failed to upload processed file")
-
+                raise HTTPException(status_code=500, detail="Failed to upload processed file")
         return {"message": "File processed and uploaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Create function to select columns, then upload the processed file into Supabase
+@app.post("/process_csv_supabase/")
+async def process_csv_supabase(file_path: str, columns: list[str] = Query(...)):
+    try:
+        # Step 2: Download the CSV file
+        with open("datatest", 'wb+') as f:
+            # This will download the file from Supabase storage
+            res = supabase.storage.from_('datamall').download(file_path)
+            # This will write the downloaded file to the local file system
+            f.write(res)
+        if not res:
+            raise HTTPException(status_code=404, detail="File not found")
+        # This will read the CSV file into a pandas DataFrame
+        df = pd.read_csv('datatest')
+
+        return select_columns(df, columns)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/process_csv_local/")
+async def process_csv_local(file_path: str, columns: list[str] = Query(...)):
+    try:
+        # Open CSV from local data folder
+        df = pd.read_csv(f"data/{file_path}")
+        return select_columns(df, columns)
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
