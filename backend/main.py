@@ -103,7 +103,6 @@ async def process_csv_supabase(file_path: str, columns: list[str] = Query(...)):
             raise HTTPException(status_code=404, detail="File not found")
         # This will read the CSV file into a pandas DataFrame
         df = pd.read_csv('datatest')
-
         return select_columns(df, columns)
     
     except Exception as e:
@@ -113,7 +112,7 @@ async def process_csv_supabase(file_path: str, columns: list[str] = Query(...)):
 async def process_csv_local(file_path: str, columns: list[str] = Query(...)):
     try:
         # Open CSV from local data folder
-        df = pd.read_csv(f"data/{file_path}")
+        df = pd.read_csv(file_path)
         return select_columns(df, columns)
     
     except Exception as e:
