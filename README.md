@@ -13,9 +13,14 @@ Repo for team RCH4CKERS
 7. Press graph and select node to see logs
 8. To stop press Ctrl + C and run docker compose down
 
-
-# Backend 
+# Backend
 
 1. Obtain supabase credentials
 2. add credentials to local .env file in backend folder
-3. run the fastapi backend with `fastapi dev main.py`
+3. run the fastapi backend with `fastapi dev main.py `
+4. On the top righ, there is an authorise button. This is to inform the fastapi who is the current user.
+5. This function uses Supabase Auth, and when you use this for the first time to you have to first navigate to the register_supabase function and register using a *valid email* address and password
+6. Navigate to the sign in email sent to the email address and click on the link. Nothing wrongs if redirected to link not file
+7. Proceed to the sign_in function and place your own credentials. Upon executing an access token will be generated.
+8. Save the access token somewhere
+9. You can now insert the access token in the top right authorise button and can use the restricted functions
