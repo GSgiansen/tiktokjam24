@@ -1,7 +1,11 @@
-from fastapi import FastAPI, Security,Depends
+from http.client import HTTPException
+from io import BytesIO
+from fastapi import FastAPI, HTTPException, Query
+import pandas as pd, Security,Depends
 from routers import users, classification_models, regression_models, projects
 from db.supabase import get_supabase_client
 from typing import Union
+from io import BytesIO
 
 import airflow_client.client as client
 from airflow_client.client.api import config_api
@@ -10,11 +14,6 @@ from airflow_client.client.model.dag_run import DAGRun
 from airflow_client.client.model.config import Config
 from airflow_client.client.model.error import Error
 from pydantic import BaseModel
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import HTTPException, Security
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import Annotated
-
 
 app = FastAPI()
 # Include the routers
@@ -110,3 +109,47 @@ async def register_supabase(email: str, password: str):
 @app.get("/protected-route/")
 async def protected_route(user: dict = Depends(get_current_user)):
     return {"message": "This is a protected route.", "user": user}
+
+def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    try: 
+        # Step 3: Select the specified columns
+        selected_columns = df[columns]
+        # Save the processed DataFrame to a new CSV file
+        processed_csv_file = BytesIO()
+        selected_columns.to_csv(processed_csv_file, index=False)
+        processed_csv_file.seek(0)  # Reset the file pointer to the beginning
+        upload_response = supabase.storage.from_('datamall').upload('processed_file_test.csv', processed_csv_file.getvalue())
+        if not upload_response:
+                raise HTTPException(status_code=500, detail="Failed to upload processed file")
+        return {"message": "File processed and uploaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Create function to select columns, then upload the processed file into Supabase
+@app.post("/process_csv_supabase/")
+async def process_csv_supabase(file_path: str, columns: list[str] = Query(...)):
+    try:
+        # Step 2: Download the CSV file
+        with open("datatest", 'wb+') as f:
+            # This will download the file from Supabase storage
+            res = supabase.storage.from_('datamall').download(file_path)
+            # This will write the downloaded file to the local file system
+            f.write(res)
+        if not res:
+            raise HTTPException(status_code=404, detail="File not found")
+        # This will read the CSV file into a pandas DataFrame
+        df = pd.read_csv('datatest')
+        return select_columns(df, columns)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/process_csv_local/")
+async def process_csv_local(file_path: str, columns: list[str] = Query(...)):
+    try:
+        # Open CSV from local data folder
+        df = pd.read_csv(file_path)
+        return select_columns(df, columns)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

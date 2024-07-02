@@ -15,13 +15,6 @@ Repo for team RCH4CKERS
 
 # Backend
 
-<<<<<<< HEAD
-1. Run `pip install fastapi supabase apache-airflow-client`
-2. Obtain supabase credentials via the connect button
-3. Add to local .env file in backend folder under SUPABASE_URL and SUPABASE_KEY
-4. Run `cd backend` and run the fastapi backend with `fastapi dev main.py`
-5. `Ctrl + C` to stop
-=======
 1. Obtain supabase credentials
 2. add credentials to local .env file in backend folder
 3. run the fastapi backend with `fastapi dev main.py `
@@ -36,4 +29,3 @@ Repo for team RCH4CKERS
 # Errors
 
 1. If rateLimited error hit in the console, it means that too many users have tried to register to supabase, and thus need to give it about an hour to reset
->>>>>>> main
