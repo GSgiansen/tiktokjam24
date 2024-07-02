@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { StepProps } from "./step-props";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Checkbox } from "../ui/checkbox";
-import { Spinner } from "../ui/spinner";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
+import { StepProps } from "../step-props";
+import { RadioGroup, RadioGroupItem } from "../../ui/radio-group";
+import { Checkbox } from "../../ui/checkbox";
+import { Spinner } from "../../ui/spinner";
 import { Controller } from "react-hook-form";
 
 const UploadStep = ({
   name,
   csvFile,
   columns,
+  targetColumn,
   form,
   updateForm,
 }: StepProps) => {
@@ -33,8 +34,6 @@ const UploadStep = ({
         const data = await response.json();
         setLoading(false);
         setSelectColumns(data.headers);
-        updateForm({ columns: data.headers });
-        console.log(data);
       } catch (err) {
         console.error(err);
       }
@@ -42,6 +41,10 @@ const UploadStep = ({
       console.error("No file found");
     }
   };
+
+  useEffect(() => {
+    updateForm({ columns: selectColumns });
+  }, [selectColumns]);
 
   useEffect(() => {
     console.log(csvFile);
@@ -92,7 +95,10 @@ const UploadStep = ({
             </div>
             <div>
               <p className="font-bold">Target</p>
-              <RadioGroup>
+              <RadioGroup
+                defaultValue={targetColumn || ""}
+                onValueChange={(value) => updateForm({ targetColumn: value })}
+              >
                 {selectColumns.map((column, index) => {
                   return (
                     <div

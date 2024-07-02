@@ -1,12 +1,12 @@
-import { Input } from "../ui/input";
+import { Input } from "../../ui/input";
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { StepProps } from "./step-props";
+} from "../../ui/form";
+import { StepProps } from "../step-props";
 
 const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
   return (

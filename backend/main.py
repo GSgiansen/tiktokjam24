@@ -14,6 +14,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
@@ -25,6 +26,13 @@ app.include_router(projects.router, prefix="/projects", tags=["projects"])
 # Initialize supabase client
 supabase = get_supabase_client()
 # Defining the host is optional and defaults to /api/v1
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace with your frontend domain e.g., ["http://localhost", "https://example.com"]
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Allowed HTTP methods
+    allow_headers=["*"],  # Allowed headers
+)
 
 
 configuration = client.Configuration(
