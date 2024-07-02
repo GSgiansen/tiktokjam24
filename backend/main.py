@@ -1,8 +1,8 @@
 from http.client import HTTPException
 from io import BytesIO
 from fastapi import FastAPI, HTTPException, Query
-import pandas as pd
-from routers import users, classification_models, regression_models
+import pandas as pd, Security,Depends
+from routers import users, classification_models, regression_models, projects
 from db.supabase import get_supabase_client
 from typing import Union
 from io import BytesIO
@@ -14,17 +14,16 @@ from airflow_client.client.model.dag_run import DAGRun
 from airflow_client.client.model.config import Config
 from airflow_client.client.model.error import Error
 from pydantic import BaseModel
-import pandas as pd
 
 app = FastAPI()
 # Include the routers
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(classification_models.router, prefix="/classification_models", tags=["classification_models"])
 app.include_router(regression_models.router, prefix="/regression_models", tags=["regression_models"])
+app.include_router(projects.router, prefix="/projects", tags=["projects"])
 # Initialize supabase client
 supabase = get_supabase_client()
 # Defining the host is optional and defaults to /api/v1
-
 
 
 configuration = client.Configuration(
@@ -32,6 +31,17 @@ configuration = client.Configuration(
     username="airflow",
     password="airflow"
 )
+
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
+    token = credentials.credentials
+    response = supabase.auth.get_user(token)
+    
+    if 'error' in response:
+        raise HTTPException(status_code=401, detail="Invalid token or authentication credentials.")
+    
+    return response.user
 
 # Enter a context with an instance of the API client
 with client.ApiClient(configuration) as api_client:
@@ -49,8 +59,6 @@ with client.ApiClient(configuration) as api_client:
 class TriggerDagRequest(BaseModel):
     dag_id: str
     conf: dict = {}
-
-
 
 
 @app.post("/trigger_dag/")
@@ -73,6 +81,34 @@ async def trigger_dag(request: TriggerDagRequest):
             return {"message": "DAG triggered successfully", "dag_run_id": api_response.dag_run_id}
     except client.ApiException as e:
         print("Exception when calling DAGRunApi->post_dag_run: %s\n" % e)
+
+
+@app.post("/login_supabase/")
+# using supabase auth to login
+async def login_supabase(email: str, password: str):
+    
+# data = supabase.auth.sign_in_with_password({"email": "j0@supabase.io", "password": "testsupabasenow"})
+    response = supabase.auth.sign_in_with_password({"email":email, "password":password})
+    # if response.error:
+    #     return response.error
+    return {"access_token": response.session.access_token, "token_type": "bearer"}
+
+
+@app.post("/register_supabase/")
+# using supabase auth to register
+async def register_supabase(email: str, password: str):
+    response = supabase.auth.sign_up(
+        credentials={"email": email, "password": password}
+    )
+    print(response)
+    # if response.error:
+    #     return response.error
+    return response.session.access_token
+
+
+@app.get("/protected-route/")
+async def protected_route(user: dict = Depends(get_current_user)):
+    return {"message": "This is a protected route.", "user": user}
 
 def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     try: 

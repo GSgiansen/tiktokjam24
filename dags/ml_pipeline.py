@@ -7,6 +7,13 @@ from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
+import io
+import os
+import tempfile
+import joblib
+from backend.db import get_supabase_client
+
+supabase = get_supabase_client()
 
 # Helper functions
 
@@ -183,68 +190,196 @@ def get_metric(y_true, y_pred):
     
     # can implement more metrics in future
 
+def upload_file(file_path, storage_path, bucket):
+    """Upload file to Supabase storage"""
+    with open(file_path, 'rb') as f:
+        response = supabase.storage.from_(bucket).upload(storage_path, f)
+
 
 ## PIPELINE ##
 
 # prepare data
 def prepare_data():
-    import pandas as pd
+    bucket_name = 'datamall'
+    project_id = 'a9ad5bdc-52e7-4ca1-be0f-33a94287aaba'
+    run_id = '1'
+    # project_id = context['dag_run'].conf.get('project_id')
+    # run_id = context['dag_run'].conf.get('run_id')
 
-    # Load dataset
-    data = pd.read_csv('data/data.csv')
+    # Load data
+    try:
+        data_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/data.csv')
+        data = pd.read_csv(io.BytesIO(data_bytes))
+    except Exception as e:
+        print(f"Error downloading project data: {e}")
+        raise
 
     # Split into train and test
     train = data.sample(frac=0.8, random_state=200)
     test = data.drop(train.index)
 
     # Save train and test data
-    train.to_csv('data/train.csv', index=False)
-    test.to_csv('data/test.csv', index=False)
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as train_file, \
+             tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as test_file:
+            
+            train.to_csv(train_file.name, index=False)
+            test.to_csv(test_file.name, index=False)
+            
+            train_file_path = train_file.name
+            test_file_path = test_file.name
+
+            # Upload to Supabase storage
+            upload_file(train_file_path, f'{project_id}/{run_id}/train.csv', bucket_name)
+            upload_file(test_file_path, f'{project_id}/{run_id}/test.csv', bucket_name)
+    except Exception as e:
+        print(f"Error uploading project data: {e}")
+        raise
+    finally:
+        # Cleanup temporary files
+        try:
+            os.remove(train_file_path)
+            os.remove(test_file_path)
+        except Exception as cleanup_error:
+            print(f"Error cleaning up temporary files: {cleanup_error}")
 
     print('Data loaded and split into train and test data')
 
 def preprocess_train_data():
-    data = pd.read_csv('data/train.csv')
-    data = process_data(data)
+    bucket_name = 'datamall'
+    project_id = 'a9ad5bdc-52e7-4ca1-be0f-33a94287aaba'
+    run_id = '1'
+    # project_id = context['dag_run'].conf.get('project_id')
+    # run_id = context['dag_run'].conf.get('run_id')
 
+    # Load data
+    try:
+        data_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{run_id}/train.csv')
+        data = pd.read_csv(io.BytesIO(data_bytes))
+    except Exception as e:
+        print(f"Error downloading project data: {e}")
+        raise
+
+    # Process data
+    processed_data = process_data(data)
     print("Data processed")
 
     # Save data
-    data.to_csv('data/processed_train_data.csv', index=False)
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as processed_train_file:
+            processed_data.to_csv(processed_train_file.name, index=False)
+            
+            processed_train_file_path = processed_train_file.name
+
+            # Upload to Supabase storage
+            upload_file(processed_train_file_path, f'{project_id}/{run_id}/processed_train_data.csv', bucket_name)
+    except Exception as e:
+        print(f"Error uploading project data: {e}")
+        raise
+    finally:
+        # Cleanup temporary files
+        try:
+            os.remove(processed_train_file_path)
+        except Exception as cleanup_error:
+            print(f"Error cleaning up temporary files: {cleanup_error}")
+
+    print('Processed train data saved')
 
 def preprocess_test_data():
-    data = pd.read_csv('data/test.csv')
-    data = process_data(data)
+    bucket_name = 'datamall'
+    project_id = 'a9ad5bdc-52e7-4ca1-be0f-33a94287aaba'
+    run_id = '1'
+    # project_id = context['dag_run'].conf.get('project_id')
+    # run_id = context['dag_run'].conf.get('run_id')
 
+    # Load data
+    try:
+        data_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{run_id}/test.csv')
+        data = pd.read_csv(io.BytesIO(data_bytes))
+    except Exception as e:
+        print(f"Error downloading project data: {e}")
+        raise
+
+    processed_data = process_data(data)
     print("Data processed")
 
-    # Save data
-    data.to_csv('data/processed_test_data.csv', index=False)
+     # Save data
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as processed_test_file:
+            processed_data.to_csv(processed_test_file.name, index=False)
+            
+            processed_test_file_path = processed_test_file.name
+
+            # Upload to Supabase storage
+            upload_file(processed_test_file_path, f'{project_id}/{run_id}/processed_test_data.csv', bucket_name)
+    except Exception as e:
+        print(f"Error uploading project data: {e}")
+        raise
+    finally:
+        # Cleanup temporary files
+        try:
+            os.remove(processed_test_file_path)
+        except Exception as cleanup_error:
+            print(f"Error cleaning up temporary files: {cleanup_error}")
+
+    print('Processed train data saved')
 
 def train_and_test_model():
-    train_data = pd.read_csv('data/processed_train_data.csv')
-    test_data = pd.read_csv('data/processed_test_data.csv')
+    bucket_name = 'datamall'
+    project_id = 'a9ad5bdc-52e7-4ca1-be0f-33a94287aaba'
+    run_id = '1'
+    # project_id = context['dag_run'].conf.get('project_id')
+    # run_id = context['dag_run'].conf.get('run_id')
+    
+    # Load data
+    try:
+        train_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{run_id}/processed_train_data.csv')
+        train_data = pd.read_csv(io.BytesIO(train_bytes))
+        test_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{run_id}/processed_test_data.csv')
+        test_data = pd.read_csv(io.BytesIO(test_bytes))
+    except Exception as e:
+        print(f"Error downloading project data: {e}")
+        raise
 
     model = train_model(train_data)
     metric = test_model(model, test_data)
 
     print(f'Model tested with metric: {metric}')
 
-    # Save model to /data
-    import joblib
-    joblib.dump(model, 'data/model.pkl')
+    # Save model
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pkl') as model_file:
+            joblib.dump(model, model_file.name)
+            
+            model_file_path = model_file.name
+
+            # Upload to Supabase storage
+            upload_file(model_file_path, f'{project_id}/{run_id}/model.pkl', bucket_name)
+    except Exception as e:
+        print(f"Error uploading model: {e}")
+        raise
 
     print('Model saved')
+    ## Do smth w metric
 
     print(metric)
 
 def predict():
-    # Load model
-    import joblib
-    model = joblib.load('data/model.pkl')
+    bucket_name = 'datamall'
+    project_id = 'a9ad5bdc-52e7-4ca1-be0f-33a94287aaba'
+    run_id = '1'
+    # project_id = context['dag_run'].conf.get('project_id')
+    # run_id = context['dag_run'].conf.get('run_id')
 
-    # Load predict data
-    data = pd.read_csv('data/predict.csv')
+    # Load model and data
+    try:
+        model_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{run_id}/model.pkl')
+        model = joblib.load(io.BytesIO(model_bytes))
+        data_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/predict.csv')
+        data = pd.read_csv(io.BytesIO(data_bytes))
+    except Exception as e:
+        print(f"Error downloading model: {e}")
+        raise
 
     # Process data
     data = process_data(data)
@@ -252,12 +387,23 @@ def predict():
     # Make predictions
     X = data.drop(data.columns[-1], axis=1)
     predictions = model.predict(X.select_dtypes(exclude=['object']))
-
-    # Save predictions to the same file
     data['predictions'] = predictions
-    data.to_csv('data/predict.csv', index=False)
+
+    # Save predictions
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as predictions_file:
+            data.to_csv(predictions_file.name, index=False)
+            
+            predictions_file_path = predictions_file.name
+
+            # Upload to Supabase storage
+            upload_file(predictions_file_path, f'{project_id}/{run_id}/predictions.csv', bucket_name)
+    except Exception as e:
+        print(f"Error uploading predictions: {e}")
+        raise
 
     print('Predictions saved')
+
 
 with DAG(
     default_args = {
