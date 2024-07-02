@@ -4,4 +4,4 @@
 *.env.staging
 logs/
 __pycache__/
-dag/__pycache__/
+dags/__pycache__/
