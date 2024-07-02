@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile
 from models import Project
 from db.supabase import  get_supabase_client
 from typing import Union
 from uuid import UUID
 import bcrypt
+from typing import Annotated
 
 router = APIRouter()
 # Initialize supabase client
@@ -15,29 +16,25 @@ def project_exists(name: str = None, owner: UUID = None):
 
 # Create a new project
 @router.post("/project")
-def create_project(project: Project):
+async def create_project(name: Annotated[str, Form()], file: Annotated[UploadFile, Form()]):
+    print(f"Received name: {name}")
+    print(file.filename)
+    #     # Convert name to lowercase
+    #     project_name = project.name.lower()
+
+    #     # Check if project already exists
+    #     if project_exists(name=project_name, owner=project.owner):
+    #         return {"message": "Project already exists"}
+
+    # Add project to projects table
     try:
-        # Convert name to lowercase
-        project_name = project.name.lower()
-
-        # Check if project already exists
-        if project_exists(name=project_name, owner=project.owner):
-            return {"message": "Project already exists"}
-
-        # Add project to projects table
         project = supabase.from_("projects")\
-            .insert({"name": project_name, "owner": project.owner})\
-            .execute()
-
-        # Check if project was added
-        if project:
-            return {"message": "Project created successfully"}
-        else:
-            return {"message": "Project creation failed"}
-        
+        .insert({"name": name})\
+        .execute()
     except Exception as e:
-        print("Error: ", e)
-        return {"message": "Project creation failed"}
+        print(f"Error: {e}")
+        return {"message": "Project creation failed"} 
+        # return {"message": "Project creation failed"}
 
 # Retrieve a project
 @router.get("/project")
