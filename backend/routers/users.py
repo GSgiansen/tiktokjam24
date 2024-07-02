@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from models import User
+from uuid import UUID
 from db.supabase import  get_supabase_client
 from typing import Union
 import bcrypt
@@ -42,7 +43,7 @@ def create_user(user: User):
 
 # Retrieve a user
 @router.get("/user")
-def get_user(user_id: Union[str, None] = None):
+def get_user(user_id: Union[UUID, None] = None):
     try:
         if user_id:
             user = supabase.from_("users")\
@@ -65,7 +66,7 @@ def get_user(user_id: Union[str, None] = None):
 
 # Update a user
 @router.put("/user")
-def update_user(user_id: str, email: str, name: str):
+def update_user(user_id: UUID, email: str, name: str):
     try:
         user_email = email.lower()
 
@@ -92,7 +93,7 @@ def update_user(user_id: str, email: str, name: str):
 
 # Delete a user
 @router.delete("/user")
-def delete_user(user_id: str):
+def delete_user(user_id: UUID):
     try:        
         # Check if user exists
         if user_exists("id", user_id):
