@@ -15,6 +15,8 @@ import UploadStep from "@/components/upload/upload-step";
 import ColumnStep from "@/components/upload/column-step";
 import ProjectInfoStep from "@/components/upload/project-info-step";
 import SummaryStep from "@/components/upload/summary-step";
+import { createClient } from "@/utils/supabase/client";
+import { redirect } from "next/navigation";
 
 const UploadPage = () => {
   const initialValues: FormItems = {
