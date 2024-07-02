@@ -24,3 +24,8 @@ Repo for team RCH4CKERS
 7. Proceed to the sign_in function and place your own credentials. Upon executing an access token will be generated.
 8. Save the access token somewhere
 9. You can now insert the access token in the top right authorise button and can use the restricted functions
+
+
+# Errors
+
+1. If rateLimited error hit in the console, it means that too many users have tried to register to supabase, and thus need to give it about an hour to reset
