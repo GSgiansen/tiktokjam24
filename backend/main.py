@@ -82,7 +82,7 @@ def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         processed_csv_file = BytesIO()
         selected_columns.to_csv(processed_csv_file, index=False)
         processed_csv_file.seek(0)  # Reset the file pointer to the beginning
-        upload_response = supabase.storage.from_('datamall').upload('processed_file.csv', processed_csv_file.getvalue())
+        upload_response = supabase.storage.from_('datamall').upload('processed_file_test.csv', processed_csv_file.getvalue())
         if not upload_response:
                 raise HTTPException(status_code=500, detail="Failed to upload processed file")
         return {"message": "File processed and uploaded successfully"}
