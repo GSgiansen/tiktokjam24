@@ -38,6 +38,21 @@ async def create_project(name: Annotated[str, Form()], owner: Annotated[str, For
         return {"message": f"Project creation failed {e}"} 
         # return {"message": "Project creation failed"}
 
+#Retrieve a user's projects
+@router.get("/queryProjects")
+async def get_user_projects(owner: str):
+    try:
+        projects = supabase.from_("projects")\
+            .select("id", "name", "owner")\
+            .eq("owner", owner)\
+            .execute()
+        if projects:
+            return projects
+    except Exception as e:
+        print(f"Error: {e}")
+        return {"message": "Project not found"}
+
+
 # Retrieve a project
 @router.get("/project")
 def get_project(project_id: Union[UUID, None] = None):
