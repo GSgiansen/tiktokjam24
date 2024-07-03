@@ -5,6 +5,7 @@ from typing import Union
 from uuid import UUID
 import bcrypt
 from typing import Annotated
+import json
 
 router = APIRouter()
 # Initialize supabase client
@@ -16,24 +17,25 @@ def project_exists(name: str = None, owner: UUID = None):
 
 # Create a new project
 @router.post("/project")
-async def create_project(name: Annotated[str, Form()], file: Annotated[UploadFile, Form()]):
+async def create_project(name: Annotated[str, Form()], owner: Annotated[str, Form()], file: Annotated[UploadFile, Form()]):
     print(f"Received name: {name}")
+    print(f"Received name: {owner}")
     print(file.filename)
-    #     # Convert name to lowercase
-    #     project_name = project.name.lower()
-
-    #     # Check if project already exists
-    #     if project_exists(name=project_name, owner=project.owner):
-    #         return {"message": "Project already exists"}
-
-    # Add project to projects table
     try:
-        project = supabase.from_("projects")\
-        .insert({"name": name})\
-        .execute()
+        contents = await file.read()
+        response = (supabase.from_("projects")\
+        .insert({"name": name, "owner": owner})\
+        .execute())
+        data_json = json.loads(response.json())
+        data_entries = data_json['data']
+        print(data_entries)
+        supabase.storage\
+        .from_("projects/" + data_entries[0]["id"])\
+        .upload(file=contents,path=file.filename)
+
     except Exception as e:
         print(f"Error: {e}")
-        return {"message": "Project creation failed"} 
+        return {"message": f"Project creation failed {e}"} 
         # return {"message": "Project creation failed"}
 
 # Retrieve a project
