@@ -27,7 +27,7 @@ const UploadPage = () => {
   const [formData, setFormData] = useState(initialValues);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+  const supabase = createClient();
   const {
     previousStep,
     nextStep,
@@ -49,26 +49,26 @@ const UploadPage = () => {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (isLastStep) {
       e.preventDefault();
-      console.log("ubmitting");
-      console.log(formData);
-      const finalFormData = new FormData();
-      finalFormData.append("name", formData.name);
-      console.log(finalFormData);
-      finalFormData.append("file", formData.csvFile);
-      // finalFormData.append("columns", JSON.stringify(formData.columns));
-      await fetch("http://127.0.0.1:8000/projects/project", {
-        method: "POST",
-        body: finalFormData,
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Success:", data);
-          // Handle success response
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const finalFormData = new FormData();
+        finalFormData.append("name", formData.name);
+        finalFormData.append("file", formData.csvFile);
+        finalFormData.append("columns", JSON.stringify(formData.columns));
+        finalFormData.append("owner", session?.user.id);
+        fetch("http://127.0.0.1:8000/projects/project", {
+          method: "POST",
+          body: finalFormData,
         })
-        .catch((error) => {
-          console.error("Error:", error);
-          // Handle error
-        });
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Success:", data);
+            // Handle success response
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            // Handle error
+          });
+      });
     } else {
       e.preventDefault();
       if (Object.values(errors).some((error) => error)) {
