@@ -10,7 +10,6 @@ router = APIRouter()
 
 # Initialize supabase client
 supabase = get_supabase_client()
-print("supabase", supabase)
 ### TODO
 ### Need to change model name to be unqieu
 def regression_model_exists(key: str = "name", value: str = None):

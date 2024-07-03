@@ -1,7 +1,7 @@
 from io import BytesIO
 from fastapi import FastAPI, HTTPException, Query,Security,Depends
 import pandas as pd
-from routers import users, classification_models, regression_models, projects, trigger_dag_requests
+from routers import classification_models, regression_models, projects, trigger_dag_requests
 from db.supabase import get_supabase_client
 from typing import Union
 from io import BytesIO
@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 app = FastAPI()
 # Include the routers
-app.include_router(users.router, prefix="/users", tags=["users"])
+# app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(classification_models.router, prefix="/classification_models", tags=["classification_models"])
 app.include_router(regression_models.router, prefix="/regression_models", tags=["regression_models"])
 app.include_router(projects.router, prefix="/projects", tags=["projects"])
