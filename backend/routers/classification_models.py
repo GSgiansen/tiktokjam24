@@ -12,8 +12,9 @@ router = APIRouter()
 supabase = get_supabase_client()
 ### TODO
 ### Need to change model name to be unqieu
-def classification_model_exists(key: str = "name", value: str = None):
-    classification_model = supabase.from_("classification_models").select("*").eq(key, value).execute()
+def classification_model_exists(key1: str = "project_id", value1: str = None, key2: str = "project_id_run", value2: int = None):
+
+    classification_model = supabase.from_("classification_models").select("*").eq(key1, value1).eq(key2, value2).execute()
     return len(classification_model.data) > 0
 
 # Create a new classification_model
@@ -21,15 +22,24 @@ def classification_model_exists(key: str = "name", value: str = None):
 def create_classification_model(classification_model: Classification_Model):
     try:
         # Convert name to lowercase
-        classification_model_name = classification_model.name.lower()
         classification_model_accuracy = classification_model.accuracy
-        ## TODO
-        ## Handle unique model names
-        if classification_model_exists(value=classification_model_name):
+        classification_model_precision = classification_model.precision
+        classification_model_name = classification_model.name.lower()
+        classification_model_project_id = classification_model.project_id
+        classification_model_project_id_run = classification_model.project_id_run
+
+
+
+        if classification_model_exists(value1=classification_model_project_id, value2=classification_model_project_id_run):
             return {"message": "Classification_model already exists"}
         # Add classification_model to classification_models table
         classification_model = supabase.from_("classification_models")\
-            .insert({"name": classification_model.name, "accuracy": random.random(), "precision": random.random()})\
+            .insert({"name": classification_model.name, 
+                     "accuracy": classification_model_accuracy, 
+                     "precision": classification_model_precision,
+                     "project_id": classification_model_project_id,
+                     "project_id_run": classification_model_project_id_run
+                     })\
             .execute()
 
         # Check if classification_model was added
@@ -47,7 +57,7 @@ def get_classification_model(classification_model_id: Union[str, None] = None):
     try:
         if classification_model_id:
             classification_model = supabase.from_("classification_models")\
-                .select("id", "name")\
+                .select("id", "name", "accuracy", "precision", "project_id", "project_id_run")\
                 .eq("id", classification_model_id)\
                 .execute()
 
@@ -108,3 +118,19 @@ def delete_classification_model(classification_model_id: str):
     except Exception as e:
         print(f"Error: {e}")
         return {"message": "Classification_model deletion failed"}
+    
+
+
+### Returns all model metrics given a project_id, returns a list of all runs and their metrics
+@router.get("/query_classification_models")
+def query_classification_models(project_id: str):
+    try:
+        classification_models = supabase.from_("classification_models")\
+            .select("name", "epoch", "loss", "project_id_run")\
+            .eq("project_id", project_id)\
+            .execute()
+        if classification_models:
+            return classification_models
+    except Exception as e:
+        print(f"Error: {e}")
+        return {"message": "classification_model not found"}
