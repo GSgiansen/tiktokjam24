@@ -181,12 +181,12 @@ def test_model(model, test):
 def get_metric(y_true, y_pred):
     """Return metric based on target type"""
 
-    from sklearn.metrics import mean_squared_error, accuracy_score
+    from sklearn.metrics import mean_squared_error, accuracy_score, precision_score 
 
     if y_true.dtype in ['int64', 'float64']:
-        return mean_squared_error(y_true, y_pred)
+        return {"loss": mean_squared_error(y_true, y_pred)}
     else:
-        return accuracy_score(y_true, y_pred)
+        return {"accuracy": accuracy_score(y_true, y_pred), "precision": precision_score(y_true, y_pred)}
     
     # can implement more metrics in future
 
@@ -344,6 +344,20 @@ def train_and_test_model():
     model = train_model(train_data)
     metric = test_model(model, test_data)
 
+    ### Update metric information in the respective tables ###
+    
+    # Metric is for regression model
+    response = supabase.table("regression_models").select("id", count="exact").eq("project_id", project_id).execute()
+    if response.get("count") == 1:
+        row_id = response.get("data")[0].get("id")
+        supabase.table("regression_models").update({"loss": metric.get("loss")}).eq("id", row_id).execute()
+
+    # Metric is for classification model
+    response = supabase.table("classification_models").select("id", count="exact").eq("project_id", project_id).execute()
+    if response.get("count") == 1:
+        row_id = response.get("data")[0].get("id")
+        supabase.table("regression_models").update({"accuracy": metric.get("accuracy"), "precision": metric.get("precision")}).eq("id", row_id).execute()
+    
     print(f'Model tested with metric: {metric}')
 
     # Save model
