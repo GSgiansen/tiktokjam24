@@ -25,6 +25,16 @@ Repo for team RCH4CKERS
 8. Save the access token somewhere
 9. You can now insert the access token in the top right authorise button and can use the restricted functions
 
+# Testing
+
+### Testing for projects 
+
+1. cd into the frontend folder
+2. `pnpm install` or `npm install` try both to see which works
+3. login via the frontend
+4. add the `upload` route to the end
+5. Upload the csv file and fill up the form respectively
+6. Head to the projects table in supabase to retrieve project id
 
 # Errors
 
