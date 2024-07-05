@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import BytesIO
 from fastapi import FastAPI, HTTPException, Query,Security,Depends
 import pandas as pd
@@ -77,11 +78,12 @@ async def trigger_dag(request: TriggerDagRequest):
     dag_id = request.dag_id
     conf = request.conf
     api_instance = dag_run_api.DAGRunApi(api_client)
+    dag_run_id = dag_id + datetime.now().strftime("%Y%m%d%H%M%S")
 
     # Prepare the DAG run payload
     dag_run = DAGRun(
         conf=conf,
-        dag_run_id="dag_id",
+        dag_run_id=dag_run_id,
     )
 
     try:
