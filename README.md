@@ -5,7 +5,9 @@ Repo for team RCH4CKERS
 # INIT
 
 1. Install and run Docker Desktop in the background
-2. Enter and run `docker compose airflow-init` (for first time users)
+2. Run `pip install "apache-airflow==2.9.2" apache-airflow-providers-google==10.1.0`
+2. Add .env file with `AIRFLOW_UID=501`
+2. Enter and run `docker compose up airflow-init` (for first time users)
 3. Run `docker compose up`
 4. Go to `http://localhost:8080` and enter airflow for user and pw
 5. Find ml_pipeline in the list of dags
