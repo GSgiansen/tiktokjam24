@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile
+from fastapi.responses import JSONResponse
 from models import Project
 from db.supabase import  get_supabase_client
 from typing import Union
@@ -6,6 +7,7 @@ from uuid import UUID
 import bcrypt
 from typing import Annotated
 import json
+from typing import List
 
 router = APIRouter()
 # Initialize supabase client
@@ -17,14 +19,17 @@ def project_exists(name: str = None, owner: UUID = None):
 
 # Create a new project
 @router.post("/project")
-async def create_project(name: Annotated[str, Form()], owner: Annotated[str, Form()], file: Annotated[UploadFile, Form()]):
+async def create_project(name: Annotated[str, Form()], owner: Annotated[str, Form()], file: Annotated[UploadFile, Form()], target: Annotated[str, Form()], columns: Annotated[List[str], Form()], ml_method: Annotated[str, Form()]):
     print(f"Received name: {name}")
     print(f"Received name: {owner}")
-    print(file.filename)
+    print(f"Received name: {file}")
+    print(f"Received name: {target}")
+    print(f"Received name: {columns}")
+    print(f"Received name: {ml_method}")
     try:
         contents = await file.read()
         response = (supabase.from_("projects")\
-        .insert({"name": name, "owner": owner})\
+        .insert({"name": name, "owner": owner, "features": columns, "target": target, "ml_method": ml_method})\
         .execute())
         data_json = json.loads(response.json())
         data_entries = data_json['data']
@@ -32,11 +37,11 @@ async def create_project(name: Annotated[str, Form()], owner: Annotated[str, For
         supabase.storage\
         .from_("projects/" + data_entries[0]["id"])\
         .upload(file=contents,path=file.filename)
+        return JSONResponse(content={"id": data_entries[0]["id"]})
 
     except Exception as e:
         print(f"Error: {e}")
         return {"message": f"Project creation failed {e}"} 
-        # return {"message": "Project creation failed"}
 
 #Retrieve a user's projects
 @router.get("/queryProjects")
