@@ -29,7 +29,7 @@ async def create_project(name: Annotated[str, Form()], owner: Annotated[str, For
     try:
         contents = await file.read()
         response = (supabase.from_("projects")\
-        .insert({"name": name, "owner": owner, "features": columns, "target": target})\
+        .insert({"name": name, "owner": owner, "features": columns, "target": target, "ml_method": ml_method})\
         .execute())
         data_json = json.loads(response.json())
         data_entries = data_json['data']
