@@ -95,7 +95,6 @@ async def trigger_dag(request: TriggerDagRequest):
     except client.ApiException as e:
         print("Exception when calling DAGRunApi->post_dag_run: %s\n" % e)
 
-
 @app.post("/login_supabase/")
 # using supabase auth to login
 async def login_supabase(email: str, password: str):

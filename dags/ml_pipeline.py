@@ -40,8 +40,8 @@ def separate_nan_target(df):
     data_with_target = df.dropna(subset=[target_col])
     data_without_target = df[df[target_col].isna()]
     
-    data_with_target.to_csv('data/data_with_target.csv', index=False)
-    data_without_target.to_csv('data/data_without_target.csv', index=False)
+    # data_with_target.to_csv('data/data_with_target.csv', index=False)
+    # data_without_target.to_csv('data/data_without_target.csv', index=False)
     
     print(f"Rows with target: {len(data_with_target)}")
     print(f"Rows without target: {len(data_without_target)}")
@@ -241,38 +241,41 @@ def get_metric(y_true, y_pred):
     
     # can implement more metrics in future
 
-def upload_file(file_path, storage_path, bucket):
+def upload_file(file_path, storage_path, file_name, bucket):
     """Upload file to Supabase storage"""
+
+    # If file does not exist, upload file
+    # else, update file
+
     file_options = {
         "cache-control": "3600",
         "upsert": "true"
     }
-    with open(file_path, 'rb') as f:
-        response = supabase.storage.from_(bucket).update(file=f, path=storage_path, file_options=file_options)
-        if response.status_code != 200:
-            print(f"Error uploading file: {response.text}")
-            raise Exception(f"Error uploading file: {response.text}")
 
+    try:
+        # Check if file exists
+        files = supabase.storage.from_(bucket).list(storage_path)
+        file_exists = any(file['name'] == file_name for file in files)
+
+        with open(file_path, 'rb') as f:
+            if file_exists:
+                response = supabase.storage.from_(bucket).update(
+                    file=f,
+                    path=f'{storage_path}/{file_name}',
+                    file_options=file_options
+                )
+                print('File updated')
+            else:
+                response = supabase.storage.from_(bucket).upload(
+                    file=f,
+                    path=f'{storage_path}/{file_name}',
+                )
+                print('File uploaded')
+    except Exception as e:
+        print(f"Error uploading file: {e}")
+        raise
 
 ## PIPELINE ##
-
-# remove past data
-# def remove_past_data(**context):
-#     bucket_name = 'datamall'
-#     project_id = context['dag_run'].conf.get('project_id')
-#     folder_name = 'data'
-
-#     try:
-#         file_list = supabase.storage.from_(bucket_name).list(project_id)
-#         data_folder_exist = any([file['name'] == folder_name for file in file_list])
-#         if data_folder_exist:
-#             for file in file_list:
-#                 if file['name'] == folder_name:
-#                     supabase.storage.from_(bucket_name).remove(f'{project_id}/{folder_name}/')
-#                     print('Past data removed')
-#     except Exception as e:
-#         print(f"Error removing past data: {e}")
-#         raise
 
 # prepare data
 def prepare_data(**context):
@@ -304,8 +307,8 @@ def prepare_data(**context):
             test_file_path = test_file.name
 
             # Upload to Supabase storage
-            upload_file(train_file_path, f'{project_id}/{folder_name}/train.csv', bucket_name)
-            upload_file(test_file_path, f'{project_id}/{folder_name}/test.csv', bucket_name)
+            upload_file(train_file_path, f'{project_id}/{folder_name}', 'train.csv', bucket_name)
+            upload_file(test_file_path, f'{project_id}/{folder_name}', 'test.csv', bucket_name)
     except Exception as e:
         print(f"Error uploading project data: {e}")
         raise
@@ -344,7 +347,7 @@ def preprocess_train_data(**context):
             processed_train_file_path = processed_train_file.name
 
             # Upload to Supabase storage
-            upload_file(processed_train_file_path, f'{project_id}/{folder_name}/processed_train_data.csv', bucket_name)
+            upload_file(processed_train_file_path, f'{project_id}/{folder_name}', 'processed_train_data.csv', bucket_name)
     except Exception as e:
         print(f"Error uploading project data: {e}")
         raise
@@ -381,7 +384,7 @@ def preprocess_test_data(**context):
             processed_test_file_path = processed_test_file.name
 
             # Upload to Supabase storage
-            upload_file(processed_test_file_path, f'{project_id}/{folder_name}/processed_test_data.csv', bucket_name)
+            upload_file(processed_test_file_path, f'{project_id}/{folder_name}' ,'processed_test_data.csv', bucket_name)
     except Exception as e:
         print(f"Error uploading project data: {e}")
         raise
@@ -425,8 +428,8 @@ def train_and_test_model(**context):
             features_file_path = features_file.name
 
             # Upload to Supabase storage
-            upload_file(model_file_path, f'{project_id}/{folder_name}/model.pkl', bucket_name)
-            upload_file(features_file_path, f'{project_id}/{folder_name}/selected_features.pkl', bucket_name)
+            upload_file(model_file_path, f'{project_id}/{folder_name}', 'model.pkl', bucket_name)
+            upload_file(features_file_path, f'{project_id}/{folder_name}', 'selected_features.pkl', bucket_name)
     except Exception as e:
         print(f"Error uploading model or features: {e}")
         raise
@@ -485,7 +488,7 @@ def predict(**context):
             predictions_file_path = predictions_file.name
 
             # Upload to Supabase storage
-            upload_file(predictions_file_path, f'{project_id}/{folder_name}/predictions.csv', bucket_name)
+            upload_file(predictions_file_path, f'{project_id}/{folder_name}', 'predictions.csv', bucket_name)
     except Exception as e:
         print(f"Error uploading predictions: {e}")
         raise
@@ -511,11 +514,6 @@ with DAG(
     dag_id='ml_pipeline',
 ) as dag:
     start = DummyOperator(task_id='start')
-
-    # remove_past_data = PythonOperator(
-    #     task_id='remove_past_data',
-    #     python_callable=remove_past_data
-    # )
 
     prepare_data = PythonOperator(
         task_id='prepare_data',
