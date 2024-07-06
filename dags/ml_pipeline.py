@@ -390,33 +390,34 @@ def train_and_test_model():
     model = train_model(train_data)
     metric = test_model(model, test_data)
 
-    ### Update metric information in the respective tables ###
+    name = f"Run #{run_id}"
 
-    # Metric is for regression model
-    response = (
-        supabase.table("regression_models")
-        .select("id", count="exact")
-        .eq("project_id", project_id)
-        .execute()
-    )
-    if response.get("count") == 1:
-        row_id = response.get("data")[0].get("id")
-        supabase.table("regression_models").update({"loss": metric.get("loss")}).eq(
-            "id", row_id
-        ).execute()
-
-    # Metric is for classification model
-    response = (
-        supabase.table("classification_models")
-        .select("id", count="exact")
-        .eq("project_id", project_id)
-        .execute()
-    )
-    if response.get("count") == 1:
-        row_id = response.get("data")[0].get("id")
-        supabase.table("regression_models").update(
-            {"accuracy": metric.get("accuracy"), "precision": metric.get("precision")}
-        ).eq("id", row_id).execute()
+    if len(metric) == 1:  # Regression model
+        _ = (
+            supabase.table("regression_models")
+            .insert(
+                {
+                    "epoch": 50,
+                    "loss": metric.get("loss"),
+                    "name": name,
+                    "project_id": project_id,
+                }
+            )
+            .execute()
+        )
+    elif len(metric) == 2:  # Classification model
+        _ = (
+            supabase.table("classification_models")
+            .insert(
+                {
+                    "accuracy": metric.get("accuracy"),
+                    "precision": metric.get("precision"),
+                    "name": name,
+                    "project_id": project_id,
+                }
+            )
+            .execute()
+        )
 
     print(f"Model tested with metric: {metric}")
 
