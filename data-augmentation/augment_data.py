@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MAX_ROWS = 200
+MAX_ROWS = 75
 
 def retrieve_and_augment_data(input: str, iter_count: int, filepath: str, dirpath: str):
     llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.9)
