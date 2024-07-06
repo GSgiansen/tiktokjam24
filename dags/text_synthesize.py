@@ -99,15 +99,14 @@ def retrieve_and_augment_data(**context):
     split_dir = "/".join(split[:-1])
     response = supabase.storage.from_(f"synthesize_data/{split_dir}").upload(file=open(filepath, 'rb'), path="generated.csv")
 
-    return "Results have been appended to the CSV file."
-
+    return results
 def append_to_csv(filepath, data):
     print("Appending to CSV")
     with open(filepath, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=data[0].keys())
         if file.tell() == 0:
             writer.writeheader()
-        for row in data:
+        for row in data: 
             writer.writerow(row)
 
 def embed_data(filepath, dirpath):
