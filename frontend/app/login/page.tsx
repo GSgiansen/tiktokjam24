@@ -94,9 +94,6 @@ export default function SignInPage({
           </p>
         )}
       </form>
-      <div className="border-4 border-white">
-        <SampleChart />
-      </div>
     </div>
   );
 }

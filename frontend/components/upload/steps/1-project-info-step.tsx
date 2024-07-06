@@ -7,6 +7,8 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { StepProps } from "../step-props";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
   return (
@@ -35,6 +37,35 @@ const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
               />
             </FormControl>
             <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="mlMethod"
+        render={({}) => (
+          <FormItem>
+            <RadioGroup
+              onValueChange={(value) => updateForm({ ml_method: value })}
+            >
+              <div
+                key={"regression"}
+                className="flex flex-row items-center space-x-2 space-y-2"
+              >
+                <RadioGroupItem value={"regression"} id={"regression"} />
+                <Label htmlFor={"regression"}>{"regression"}</Label>
+              </div>
+              <div
+                key={"classification"}
+                className="flex flex-row items-center space-x-2 space-y-2"
+              >
+                <RadioGroupItem
+                  value={"classification"}
+                  id={"classification"}
+                />
+                <Label htmlFor={"classification"}>{"classification"}</Label>
+              </div>
+            </RadioGroup>
           </FormItem>
         )}
       />
