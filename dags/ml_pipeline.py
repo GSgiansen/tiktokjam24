@@ -15,7 +15,7 @@ from backend.db import get_supabase_client
 import sklearn.preprocessing as preprocessing
 from sklearn.feature_extraction.text import TfidfVectorizer
 import sklearn.linear_model as linear_model
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_error, accuracy_score, precision_score
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, f_classif, f_regression
 
@@ -235,9 +235,9 @@ def get_metric(y_true, y_pred):
     """Return metric based on target type"""
 
     if y_true.dtype in ['int64', 'float64']:
-        return mean_squared_error(y_true, y_pred)
+        return {"loss": mean_squared_error(y_true, y_pred)}
     else:
-        return accuracy_score(y_true, y_pred)
+        return {"accuracy": accuracy_score(y_true, y_pred), "precision": precision_score(y_true, y_pred)}
     
     # can implement more metrics in future
 
@@ -279,7 +279,7 @@ def upload_file(file_path, storage_path, file_name, bucket):
 
 # prepare data
 def prepare_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -323,7 +323,7 @@ def prepare_data(**context):
     print('Data loaded and split into train and test data')
 
 def preprocess_train_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -361,7 +361,7 @@ def preprocess_train_data(**context):
     print('Processed train data saved')
 
 def preprocess_test_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -398,7 +398,7 @@ def preprocess_test_data(**context):
     print('Processed train data saved')
 
 def train_and_test_model(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -415,7 +415,36 @@ def train_and_test_model(**context):
     model, selected_features = train_model(train_data)
     metric = test_model(model, test_data, selected_features)
 
-    print(f'Model tested with metric: {metric}')
+    name = f"Run #{run_id}"
+
+    if len(metric) == 1:  # Regression model
+        _ = (
+            supabase.table("regression_models")
+            .insert(
+                {
+                    "epoch": 50,
+                    "loss": metric.get("loss"),
+                    "name": name,
+                    "project_id": project_id,
+                }
+            )
+            .execute()
+        )
+    elif len(metric) == 2:  # Classification model
+        _ = (
+            supabase.table("classification_models")
+            .insert(
+                {
+                    "accuracy": metric.get("accuracy"),
+                    "precision": metric.get("precision"),
+                    "name": name,
+                    "project_id": project_id,
+                }
+            )
+            .execute()
+        )
+
+    print(f"Model tested with metric: {metric}")
 
     # Save model
     try:
@@ -447,7 +476,7 @@ def train_and_test_model(**context):
     print(metric)
 
 def predict(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -546,7 +575,6 @@ with DAG(
     prepare_data >> \
     [preprocess_train_data, preprocess_test_data] >> \
     train_and_test_model >> \
-    predict >> \
     end
 
 
