@@ -279,7 +279,7 @@ def upload_file(file_path, storage_path, file_name, bucket):
 
 # prepare data
 def prepare_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -323,7 +323,7 @@ def prepare_data(**context):
     print('Data loaded and split into train and test data')
 
 def preprocess_train_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -361,7 +361,7 @@ def preprocess_train_data(**context):
     print('Processed train data saved')
 
 def preprocess_test_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -398,7 +398,7 @@ def preprocess_test_data(**context):
     print('Processed train data saved')
 
 def train_and_test_model(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -447,7 +447,7 @@ def train_and_test_model(**context):
     print(metric)
 
 def predict(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -546,7 +546,6 @@ with DAG(
     prepare_data >> \
     [preprocess_train_data, preprocess_test_data] >> \
     train_and_test_model >> \
-    predict >> \
     end
 
 

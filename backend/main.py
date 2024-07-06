@@ -130,7 +130,7 @@ def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         processed_csv_file = BytesIO()
         selected_columns.to_csv(processed_csv_file, index=False)
         processed_csv_file.seek(0)  # Reset the file pointer to the beginning
-        upload_response = supabase.storage.from_('datamall').upload('processed_file_test.csv', processed_csv_file.getvalue())
+        upload_response = supabase.storage.from_('projects').upload('processed_file_test.csv', processed_csv_file.getvalue())
         if not upload_response:
                 raise HTTPException(status_code=500, detail="Failed to upload processed file")
         return {"message": "File processed and uploaded successfully"}
@@ -144,7 +144,7 @@ async def process_csv_supabase(file_path: str, columns: list[str] = Query(...)):
         # Step 2: Download the CSV file
         with open("datatest", 'wb+') as f:
             # This will download the file from Supabase storage
-            res = supabase.storage.from_('datamall').download(file_path)
+            res = supabase.storage.from_('projects').download(file_path)
             # This will write the downloaded file to the local file system
             f.write(res)
         if not res:
