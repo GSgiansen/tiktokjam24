@@ -44,22 +44,12 @@ def create_classification_model(classification_model: Classification_Model):
 
 # Retrieve a classification_model
 @router.get("/classification_model")
-def get_classification_model(classification_model_id: Union[str, None] = None):
+def get_classification_model(project_id: str):
+    print(project_id)
     try:
-        if classification_model_id:
-            classification_model = supabase.from_("classification_models")\
-                .select("id", "name")\
-                .eq("id", classification_model_id)\
-                .execute()
+        response = supabase.table("classification_models").select("*").eq("project_id", project_id).execute()
+        return response
 
-            if classification_model:
-                return classification_model
-        else:
-            classification_models = supabase.from_("classification_models")\
-                .select("id", "name")\
-                .execute()
-            if classification_models:
-                return classification_models
     except Exception as e:
         print(f"Error: {e}")
         return {"message": "Classification_model not found"}
