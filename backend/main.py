@@ -39,7 +39,7 @@ app.add_middleware(
 
 
 configuration = client.Configuration(
-    host="http://localhost:8080/api/v1",
+    host="http://airflow-webserver:8080/api/v1",
     username="airflow",
     password="airflow"
 )
