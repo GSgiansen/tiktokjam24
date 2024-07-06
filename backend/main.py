@@ -1,16 +1,19 @@
 from datetime import datetime
 from io import BytesIO
-from fastapi import FastAPI, HTTPException, Query,Security,Depends
+import uuid
+from fastapi import FastAPI, HTTPException, Query,Security,Depends, UploadFile, Form
 import pandas as pd
 from routers import users, classification_models, regression_models, projects
 from db.supabase import get_supabase_client
 from typing import Union
 from io import BytesIO
+import os
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Annotated
 
 import airflow_client.client as client
 from airflow_client.client.api import config_api
@@ -73,6 +76,16 @@ class TriggerDagRequest(BaseModel):
     conf: dict = {}
 
 
+class SynthesizeDataRequest(BaseModel):
+    dag_id: str
+    conf: dict = {
+        "filepath": "default",
+        "input": "default",
+        "iter_count": 10,
+        "dirpath": "default"
+    }
+
+
 @app.post("/trigger_dag/")
 async def trigger_dag(request: TriggerDagRequest):
     dag_id = request.dag_id
@@ -94,6 +107,61 @@ async def trigger_dag(request: TriggerDagRequest):
             return {"message": "DAG triggered successfully", "dag_run_id": api_response.dag_run_id}
     except client.ApiException as e:
         print("Exception when calling DAGRunApi->post_dag_run: %s\n" % e)
+
+
+
+@app.post("/trigger_dag_synthesize")
+async def trigger_dag_synthesize(request: SynthesizeDataRequest):
+    dag_id = request.dag_id
+    conf = request.conf
+    api_instance = dag_run_api.DAGRunApi(api_client)
+    dag_run_id = dag_id + datetime.now().strftime("%Y%m%d%H%M%S")
+
+    # Prepare the DAG run payload
+    dag_run = DAGRun(
+        conf=conf,
+        dag_run_id=dag_run_id,
+    )
+
+
+
+    try:
+        with client.ApiClient(configuration) as api_2_client:
+            # Create an instance of the DAGRun API class
+            # Trigger the DAG
+            api_response = api_instance.post_dag_run(dag_id, dag_run)
+            return {"message": "Synthesize DAG triggered successfully", "dag_run_id": api_response.dag_run_id}
+    except client.ApiException as e:
+        print("Exception when calling Synthesize DAGRunApi->post_dag_run: %s\n" % e)
+
+
+
+
+
+### Gety csv from frontend and generate uuid for the file
+@app.post("/synthesize_data")
+async def synthesize_data(file: UploadFile,  input: str = Form(...), iter_count: int = Form(...)):
+    bucket_name = "synthesize_data"
+    ### Upload the file path to the bucket
+    filename = str(uuid.uuid4())
+    filepath = f"{filename}/{filename}.csv"
+
+    response =  supabase.storage\
+        .from_("synthesize_data/" + filename)\
+        .upload(file=file.file.read(), path=f"{filename}.csv")
+
+    
+    classreq = SynthesizeDataRequest(dag_id="synthesize_data", conf={"filepath": filepath, "input": input, "iter_count": iter_count, "dirpath": "data"})
+    await trigger_dag_synthesize(classreq)
+
+    return filename
+
+
+
+
+
+
+
 
 @app.post("/login_supabase/")
 # using supabase auth to login
