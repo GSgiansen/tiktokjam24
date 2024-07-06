@@ -40,6 +40,7 @@ const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
           </FormItem>
         )}
       />
+      <p className="font-semibold">Model Type</p>
       <FormField
         control={form.control}
         name="mlMethod"
@@ -52,8 +53,8 @@ const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
                 key={"regression"}
                 className="flex flex-row items-center space-x-2 space-y-2"
               >
-                <RadioGroupItem value={"regression"} id={"regression"} />
-                <Label htmlFor={"regression"}>{"regression"}</Label>
+                <RadioGroupItem value={"regression"} id={"egression"} />
+                <Label htmlFor={"regression"}>{"Regression"}</Label>
               </div>
               <div
                 key={"classification"}
@@ -63,7 +64,7 @@ const ProjectInfoStep = ({ name, form, updateForm }: StepProps) => {
                   value={"classification"}
                   id={"classification"}
                 />
-                <Label htmlFor={"classification"}>{"classification"}</Label>
+                <Label htmlFor={"classification"}>{"Classification"}</Label>
               </div>
             </RadioGroup>
           </FormItem>

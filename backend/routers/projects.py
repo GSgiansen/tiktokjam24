@@ -57,7 +57,7 @@ async def create_project(name: Annotated[str, Form()], owner: Annotated[str, For
 async def get_user_projects(owner: str):
     try:
         projects = supabase.from_("projects")\
-            .select("id", "name", "owner")\
+            .select("id", "name", "owner", "ml_method")\
             .eq("owner", owner)\
             .execute()
         if projects:

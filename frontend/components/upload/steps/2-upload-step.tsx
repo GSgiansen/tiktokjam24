@@ -94,8 +94,7 @@ const UploadStep = ({
                     key={column}
                     className="flex flex-row gap-2 items-center"
                   >
-                    <Checkbox key={column}>{column}</Checkbox>
-                    <Label>{column}</Label>
+                    <li>{column}</li>
                   </div>
                 );
               })}
