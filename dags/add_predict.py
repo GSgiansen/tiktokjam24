@@ -169,7 +169,7 @@ def process_text_df(df):
 
 # Pipeline
 def predict(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     folder_name = 'data'
     project_id = context['dag_run'].conf.get('project_id')
 
