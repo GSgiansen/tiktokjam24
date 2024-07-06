@@ -5,7 +5,7 @@ import { Form } from "@/components/ui/form";
 import { useMultiplestepForm } from "@/hooks/useMultiplestepForm";
 import { FormItems } from "@/types/formItems";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "@/components/upload/form-schema";
@@ -18,17 +18,19 @@ import UploadStep from "@/components/upload/steps/2-upload-step";
 import SummaryStep from "@/components/upload/steps/3-summary-step";
 
 const UploadPage = () => {
+  const supabase = createClient();
+
   const initialValues: FormItems = {
     name: "",
     csvFile: undefined,
     columns: [],
     targetColumn: "",
+    ml_method: "",
   };
   const [formData, setFormData] = useState(initialValues);
   const router = useRouter();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const supabase = createClient();
   const {
     previousStep,
     nextStep,
