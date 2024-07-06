@@ -7,7 +7,7 @@ import pandas as pd
 import chardet
 
 
-def embed_data(filepath):
+def embed_data(filepath, dirpath):
     # Extract column names from CSV
     with open(filepath, "rb") as file:
         raw_data = file.read()
@@ -35,11 +35,13 @@ def embed_data(filepath):
     _ = Chroma.from_documents(
         documents=chunks,
         embedding=OpenAIEmbeddings(),
-        persist_directory="./chromadeeznuts",
+        persist_directory=dirpath,
     )
 
     return model
 
 
+"""
 if __name__ == "__main__":
     embed_data("./datasets/corona-sentiments.csv")
+"""
