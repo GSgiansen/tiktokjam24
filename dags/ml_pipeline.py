@@ -201,7 +201,7 @@ def get_metric(y_true, y_pred):
     if y_true.dtype in ['int64', 'float64']:
         return {"loss": mean_squared_error(y_true, y_pred)}
     else:
-        return {"accuracy": accuracy_score(y_true, y_pred), "precision": precision_score(y_true, y_pred)}
+        return {"accuracy": accuracy_score(y_true, y_pred)}
 
 def upload_file(file_path, storage_path, file_name, bucket):
     """Upload file to Supabase storage"""
@@ -394,9 +394,9 @@ def train_and_test_model(**context):
     model, selected_features = train_model(train_data)
     metric = test_model(model, test_data, selected_features, target_col)
 
-    name = f"Run {datetime.now()}"
+    name = "skibidi"
 
-    if len(metric) == 1:  # Regression model
+    if "loss" in metric:  # Regression model
         _ = (
             supabase.table("regression_models")
             .insert(
@@ -409,13 +409,13 @@ def train_and_test_model(**context):
             )
             .execute()
         )
-    elif len(metric) == 2:  # Classification model
+    elif "accuracy" in metric:  # Classification model
         _ = (
             supabase.table("classification_models")
             .insert(
                 {
                     "accuracy": metric.get("accuracy"),
-                    "precision": metric.get("precision"),
+                    "precision": 0,
                     "name": name,
                     "project_id": project_id,
                 }
@@ -460,7 +460,7 @@ with DAG(
         'retry_delay': timedelta(minutes=5)
     },
     description='ML Pipeline',
-    schedule_interval='@daily',
+    schedule_interval=None,
     start_date=datetime(2024, 6, 20),
     dag_id='ml_pipeline',
 ) as dag:
