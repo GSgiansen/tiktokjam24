@@ -30,17 +30,14 @@ def retrieve_and_augment_data(**context):
     iter_count = context['dag_run'].conf.get('iter_count')
     input = context['dag_run'].conf.get('input')
 
-
-
     response = supabase.storage.from_("synthesize_data").download(path=f"{filepath}")
 
     split = filepath.split("/")
     if not os.path.exists(split[0]):
         print("split[0] ", split[0])
         os.makedirs(split[0])
-    
 
-    print("file_path", filepath)
+    print("File path: ", filepath)
 
     with open(filepath, "wb") as file:
             file.write(response)
@@ -83,20 +80,13 @@ def retrieve_and_augment_data(**context):
         | parser
     )
 
-    test = lambda _: json.dumps({property: "str" for property in model.schema().get("properties")}, indent=2)
-    print(test(" "))
-
     iter_count = min(iter_count, MAX_ROWS)
-    results = []
 
+    results = []
     for _ in range(iter_count):
         results.append(rag_chain.invoke(input))
-        # if isinstance(result, list) and result:
-        #     results.extend(result)
-        # else:
-        #     print(f"Invalid JSON output: {result}")
+    print("Results: ", results)
 
-    print("Results are: ", results)
     if results:
         append_to_csv(filepath, data=results)
 
@@ -104,11 +94,10 @@ def retrieve_and_augment_data(**context):
     response = supabase.storage.from_(f"synthesize_data/{split_dir}").upload(file=open(filepath, 'rb'), path="generated.csv")
 
     return results
+
 def append_to_csv(filepath, data):
-    print("Appending to CSV")
+    print("Appending data to CSV...")
     with open(filepath, mode="a", newline="", encoding="utf-8") as file:
-        print("Data is: ", data)
-        print("first element is: ", data[0])
         writer = csv.DictWriter(file, fieldnames=data[0].keys())
         if file.tell() == 0:
             writer.writeheader()
