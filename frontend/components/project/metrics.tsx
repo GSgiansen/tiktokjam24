@@ -7,16 +7,40 @@ import React, { useEffect, useState } from "react";
 
 type MetricsComponentProps = {
   id: string;
+  mlMethod: string | undefined;
 };
 
-const MetricsComponent = ({ id }: MetricsComponentProps) => {
-  const [details, setDetails] = useState(null);
+type ClassificationModel = {
+  data: {
+    loss?: number;
+    accuracy?: number;
+    created_at: string;
+    name: string;
+    epoch: number;
+  }[];
+};
+
+const MetricsComponent = ({ id, mlMethod }: MetricsComponentProps) => {
+  const [details, setDetails] = useState<ClassificationModel>({
+    data: [],
+  });
+  const metric = mlMethod === "classification" ? "Accuracy" : "Loss";
 
   useEffect(() => {
     const fetchDetails = async () => {
+      const method: string =
+        mlMethod === "classification"
+          ? "classification_models"
+          : "regression_models";
+
+      const path: string =
+        mlMethod === "classification"
+          ? "classification_model"
+          : "regression_model";
+      console.log(method, path);
       try {
         const response = await fetch(
-          `http://128.199.130.222:8000/classification_models/classification_model?project_id=${id}`,
+          `http://128.199.130.222:8000/${method}/${path}?project_id=${id}`,
           {
             method: "GET",
             headers: {
@@ -64,14 +88,23 @@ const MetricsComponent = ({ id }: MetricsComponentProps) => {
       <h2 className="text-2xl font-bold mb-4">{model.name}</h2>
       <div className="flex items-center mb-4">
         <RiCheckboxCircleLine className="text-green-500 mr-2" />
-        <span className="text-lg font-medium">Accuracy: {model.accuracy}%</span>
+        <span className="text-lg font-medium">
+          {metric}: {mlMethod == "classification" ? model.accuracy : model.loss}
+          %
+        </span>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center mb-4">
         <RiTimerLine className="text-gray-500 mr-2" />
         <span className="text-lg font-medium">
           Created: {new Date(model.created_at).toLocaleString()}
         </span>
       </div>
+      {mlMethod === "regression" && (
+        <div className="flex items-center">
+          <RiTimerLine className="text-gray-500 mr-2" />
+          <span className="text-lg font-medium">Epochs: {model.epoch}</span>
+        </div>
+      )}
     </div>
   );
 };

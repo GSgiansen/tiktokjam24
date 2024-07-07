@@ -47,7 +47,7 @@ const UploadPage = () => {
 
   const initialValues: FormItems = {
     name: "",
-    csvFile: undefined,
+    csvFile: null,
     columns: [],
     targetColumn: "",
     ml_method: "",
@@ -85,8 +85,8 @@ const UploadPage = () => {
         console.log(formData);
         const finalFormData = new FormData();
         finalFormData.append("name", formData.name);
-        finalFormData.append("file", formData.csvFile);
-        finalFormData.append("owner", session?.user.id);
+        finalFormData.append("file", formData.csvFile as Blob);
+        finalFormData.append("owner", session?.user.id as string);
         finalFormData.append("target", formData.targetColumn);
         finalFormData.append("columns", JSON.stringify(formData.columns));
         finalFormData.append("ml_method", formData.ml_method);
@@ -130,7 +130,7 @@ const UploadPage = () => {
   return (
     <div className="flex flex-row gap-3 p-4">
       <SideBar currentStepIndex={currentStepIndex} goTo={goTo} />
-      <Dialog open={isOpen} className="max-w-md mx-auto">
+      <Dialog open={isOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Creating your project...</DialogTitle>

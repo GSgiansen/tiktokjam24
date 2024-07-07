@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import FileUploader from "./file-upload";
+import { Button } from "../ui/button";
+import DownloadButton from "./download-button";
 
 const PredictStatus = ({
   status,
@@ -9,34 +11,31 @@ const PredictStatus = ({
   project_id: string;
 }) => {
   const [jobRunning, setJobRunning] = useState<boolean>(false);
-  const fetchData = async () => {
-    console.log("fetching");
-    try {
-      const response = await fetch(
-        `http://128.199.130.222:8080/projects/checkPredictResultFileExist?project_id=${project_id}`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const result = await response.json();
-      console.log(result);
-      setJobRunning(true);
-    } catch (error: any) {}
-  };
+  const [downloadUrl, setDownloadUrl] = useState<string>("");
 
-  console.log(status);
   useEffect(() => {
-    fetchData(); // Fetch data immediately when component mounts
-    const intervalId = setInterval(fetchData, 5000); // Fetch data every 5 seconds
-
-    return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    fetch(
+      `http://127.0.0.1:8000/projects/getResultFileUrl?project_id=${project_id}`,
+      {
+        method: "GET",
+      }
+    )
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        setDownloadUrl(data.signedURL);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }, []);
 
   return (
     <div className="p-4 shadow-md rounded-md">
       {status === true && (
-        <div className="p-4 bg-green-100 text-green-800">
-          {jobRunning ? <>t</> : <>f</>}
+        <div className="p-4 bg-green-100 text-green-800 text-center">
+          <DownloadButton downloadUrl={downloadUrl} />
         </div>
       )}
       {status === false && <FileUploader project_id={project_id} />}

@@ -84,7 +84,7 @@ def get_project(project_id: Union[UUID, None] = None):
     print("im here")
     try:
         if project_id:
-            project = supabase.table("projects").select("id", "name", "owner").eq("id", project_id).execute()
+            project = supabase.table("projects").select("id", "name", "owner", "ml_method", "features").eq("id", project_id).execute()
             print(project)
             if project:
                 return project
@@ -170,7 +170,6 @@ async def upload_predict(project_id: Annotated[str, Form()], file: Annotated[Upl
     
 @router.get("/checkPredictFileExist")
 async def check_predict_file_exist(project_id: Union[UUID, None] = None):
-    print("/projects/")
     try:
         supabase.storage\
             .from_("projects").create_signed_url(str(project_id)+"/add_predict.csv", 60)
@@ -185,6 +184,15 @@ async def check_predict_result_file_exist(project_id: Union[UUID, None] = None):
         url = supabase.storage\
             .from_("projects").create_signed_url(str(project_id)+"/data/add_predict_res.csv", 60)
         return url
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=404)
+    
+@router.get("/getResultFileUrl")
+async def get_result_file_url(project_id: Union[UUID, None] = None):
+    try:
+        return supabase.storage\
+            .from_("projects").create_signed_url(str(project_id)+"/data/add_predict_res.csv", 60)
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=404)

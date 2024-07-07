@@ -1,28 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Spinner } from "../ui/spinner";
 import { createClient } from "@/utils/supabase/client";
 import PredictStatus from "./predict-status";
+import { Button } from "../ui/button";
 
 type PredictProps = {
   project_id: string;
 };
 
 const Predict = ({ project_id }: PredictProps) => {
-  const [loading, setLoading] = useState(false);
   const [additionalPredict, setAdditionalPredict] = useState<boolean>(false);
+  const [downloadUrl, setDownloadUrl] = useState<string>("");
   const supabase = createClient();
 
   useEffect(() => {
-    setLoading(true);
     fetch(
-      `http://128.199.130.222:8080/projects/checkPredictFileExist?project_id=${project_id}`
+      `http://128.199.130.222:8000/projects/checkPredictFileExist?project_id=${project_id}`
     )
       .then((response) => {
         console.log(response.status);
         if (response.status == 200) {
           setAdditionalPredict(true);
         }
-        setLoading(false);
         return response.json();
       })
       .then((data) => {
@@ -39,15 +37,9 @@ const Predict = ({ project_id }: PredictProps) => {
 
   return (
     <div className="p-4 shadow-md rounded-md">
-      {loading ? (
-        <div className="flex items-center justify-center">
-          <Spinner /> {/* Replace with your Spinner component */}
-        </div>
-      ) : (
-        <>
-          <PredictStatus status={additionalPredict} project_id={project_id} />
-        </>
-      )}
+      <>
+        <PredictStatus status={additionalPredict} project_id={project_id} />
+      </>
     </div>
   );
 };

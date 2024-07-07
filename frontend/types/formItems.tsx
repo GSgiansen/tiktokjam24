@@ -1,6 +1,6 @@
 export type FormItems = {
   name: string;
-  csvFile: Blob;
+  csvFile: Blob | null;
   columns: string[];
   targetColumn: string;
   ml_method: string;

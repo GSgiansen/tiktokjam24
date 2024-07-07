@@ -10,7 +10,6 @@ const SummaryStep = ({
   form,
   updateForm,
 }: StepProps) => {
-  console.log(name, csvFile, columns);
   return (
     <div className="bg-gray-800 text-white shadow-lg rounded-lg overflow-hidden">
       <div className="px-6 py-4">
@@ -25,7 +24,7 @@ const SummaryStep = ({
         {/* Uploaded File Section */}
         <div className="mb-4">
           <strong className="text-gray-400">Uploaded File:</strong>
-          <p className="text-gray-100 ml-2">{csvFile?.name}</p>
+          <p className="text-gray-100 ml-2">{(csvFile as File)?.name}</p>
         </div>
 
         {/* ML Method File Section */}
