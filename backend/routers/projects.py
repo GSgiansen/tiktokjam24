@@ -144,7 +144,7 @@ def delete_project(project_id: UUID):
     
 
 @router.post("/uploadPredict")
-async def upload_predict(project_id: Union[UUID, None] = None, file: UploadFile = File(...), authorization: str = Depends(get_authorization_header)):
+async def upload_predict(project_id: Annotated[str, Form()], file: Annotated[UploadFile, Form()], authorization: str = Depends(get_authorization_header)):
     try:
         contents = await file.read()
         supabase.storage\
@@ -154,14 +154,14 @@ async def upload_predict(project_id: Union[UUID, None] = None, file: UploadFile 
 
     except Exception as e:
         print(f"Error: {e}")
-        return {"message": f"Project creation failed {e}"} 
+        return {"message": f"Upload failed {e}"} 
     
 @router.get("/checkPredictFileExist")
 async def check_predict_file_exist(project_id: Union[UUID, None] = None):
     print("/projects/")
     try:
         supabase.storage\
-            .from_("projects").create_signed_url("f42e68e6-8f80-4e60-9c4e-caa1ff26d8c1/add_predict.csv", 60)
+            .from_("projects").create_signed_url(str(project_id)+"/add_predict.csv", 60)
         return {}
     except Exception as e:
         print(f"Error: {e}")
