@@ -4,6 +4,7 @@ import MetricsComponent from "@/components/project/metrics";
 import ShineBorder from "@/components/magicui/shine-border";
 import { createClient } from "@/utils/supabase/client";
 import FileUploader from "@/components/project/predict";
+import Predict from "@/components/project/predict";
 export default function Page({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
@@ -25,7 +26,7 @@ export default function Page({ params }: { params: { id: string } }) {
                 <div
                   onClick={() => {
                     supabase.auth.getSession().then(({ data: { session } }) => {
-                      fetch(`http://127.0.0.1:8000/trigger_dag/`, {
+                      fetch(`http://128.199.130.222:8000/trigger_dag/`, {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/json",
@@ -58,7 +59,7 @@ export default function Page({ params }: { params: { id: string } }) {
             result file: project-id/data/add_predict_res.csv
             */}
           </>
-          <FileUploader project_id={params.id} />
+          <Predict project_id={params.id} />
         </TabsContent>
       </Tabs>
     </div>
