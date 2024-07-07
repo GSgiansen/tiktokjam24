@@ -5,3 +5,4 @@
 logs/
 __pycache__/
 dags/__pycache__/
+data/chroma.sqlite3
