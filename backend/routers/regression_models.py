@@ -44,25 +44,15 @@ def create_regression_model(regression_model: Regression_Model):
 
 # Retrieve a regression_model
 @router.get("/regression_model")
-def get_regression_model(regression_model_id: Union[str, None] = None):
+def get_regression_model(project_id: Union[str, None] = None):
     try:
-        if regression_model_id:
-            regression_model = supabase.from_("regression_models")\
-                .select("id", "name")\
-                .eq("id", regression_model_id)\
+        return supabase.from_("regression_models")\
+                .select("*")\
+                .eq("project_id", project_id)\
                 .execute()
-
-            if regression_model:
-                return regression_model
-        else:
-            regression_models = supabase.from_("regression_models")\
-                .select("id", "name")\
-                .execute()
-            if regression_models:
-                return regression_models
     except Exception as e:
         print(f"Error: {e}")
-        return {"message": "regression_modelnot found"}
+        return {"message": "regression_model not found"}
 
 
 # Update a regression_model

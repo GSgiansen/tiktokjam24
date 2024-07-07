@@ -2,8 +2,6 @@ import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { SubmitButton } from "./submit-button";
-import SampleChart from "@/components/samplechart";
-import { Card, ProgressBar } from "@tremor/react";
 
 export default function SignInPage({
   searchParams,

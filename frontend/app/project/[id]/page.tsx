@@ -5,11 +5,48 @@ import ShineBorder from "@/components/magicui/shine-border";
 import { createClient } from "@/utils/supabase/client";
 import FileUploader from "@/components/project/predict";
 import Predict from "@/components/project/predict";
+import { useEffect, useState } from "react";
+
+type Project = {
+  id: string;
+  name: string;
+  owner: string;
+  ml_method: string;
+  features: [string];
+};
 export default function Page({ params }: { params: { id: string } }) {
   const supabase = createClient();
+  const [project, setProject] = useState<Project | null>(null);
+  useEffect(() => {
+    fetch(
+      `http://128.199.130.222:8000/projects/project?project_id=${params.id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data.data[0]);
+        setProject(data.data[0]);
+      });
+  }, []);
 
   return (
     <div className="p-6 border-4 border-gray-300 rounded-lg shadow-lg max-w-md mx-auto">
+      <div>
+        <p>
+          <strong>Project: </strong>
+          {project?.name}
+        </p>
+        <p className="capitalize">
+          <strong>ML Method:</strong> {project?.ml_method}
+        </p>
+      </div>
+
+      <br />
       <Tabs defaultValue="account" className="w-[400px]">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="account">Start Training</TabsTrigger>
@@ -49,7 +86,7 @@ export default function Page({ params }: { params: { id: string } }) {
           </div>
         </TabsContent>
         <TabsContent value="metrics">
-          <MetricsComponent id={params.id} />
+          <MetricsComponent id={params.id} mlMethod={project?.ml_method} />
         </TabsContent>
         <TabsContent value="predict">
           <>
