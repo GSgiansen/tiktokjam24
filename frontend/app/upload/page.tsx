@@ -28,6 +28,22 @@ import {
 
 const UploadPage = () => {
   const supabase = createClient();
+  const [authenticated, setAuthenticated] = useState(false);
+  const [accessToken, setAccessToken] = useState<string>("");
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+      } else {
+        setAccessToken(session.access_token);
+        setAuthenticated(true);
+      }
+    };
+    checkSession();
+  }, []);
 
   const initialValues: FormItems = {
     name: "",
@@ -62,8 +78,8 @@ const UploadPage = () => {
   });
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (isLastStep) {
-      setIsCreating(true);
-      setIsOpen(true);
+      // setIsCreating(true);
+      // setIsOpen(true);
       e.preventDefault();
       supabase.auth.getSession().then(({ data: { session } }) => {
         console.log(formData);
@@ -77,14 +93,17 @@ const UploadPage = () => {
         console.log(finalFormData);
         fetch("http://127.0.0.1:8000/projects/project", {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`, // Include your authorization token
+          },
           body: finalFormData,
         })
           .then((response) => response.json())
           .then((data) => {
             setTimeout(() => {
               setIsCreating(false);
-              router.push(`/project/${data.id}`);
-            }, 5000); // 10 seconds delay
+              // router.push(`/project/${data.id}`);
+            }, 5000);
           })
           .catch((error) => {
             console.error("Error:", error);
@@ -103,14 +122,15 @@ const UploadPage = () => {
     console.log("updating", fieldToUpdate);
     setFormData({ ...formData, ...fieldToUpdate });
   }
+
+  if (!authenticated) {
+    return <Spinner />;
+  }
+
   return (
     <div className="flex flex-row gap-3 p-4">
       <SideBar currentStepIndex={currentStepIndex} goTo={goTo} />
-      <Dialog
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        className="max-w-md mx-auto"
-      >
+      <Dialog open={isOpen} className="max-w-md mx-auto">
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Creating your project...</DialogTitle>

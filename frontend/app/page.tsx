@@ -1,8 +1,5 @@
-import BlurIn from "@/components/magicui/blur-in";
 import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
 import ShimmerButton from "@/components/magicui/shimmer-button";
-import WordPullUp from "@/components/magicui/word-pull-up";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 
@@ -22,8 +19,12 @@ export default function Home() {
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center justify-center p-8">
-      <WordPullUp words="Simplify Machine Learning!" />
-      <BlurIn word="Just upload your CSV and tell us what to predict!!" />
+      <p className="font-display text-start text-8xl font-bold leading-[5rem] tracking-[-0.02em] drop-shadow-sm">
+        Simplify Machine Learning
+      </p>
+      <p className="font-display text-4xl text-start font-bold tracking-[-0.02em] drop-shadow-sm text-neutral-600">
+        Just upload your CSV and tell us what to predict!!
+      </p>
       <Link href={"/upload"}>
         <ShimmerButton className="shadow-2xl">
           <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
