@@ -52,11 +52,15 @@ def retrieve_and_augment_data(**context):
 
     template = """
         You are a creative AI assistant whose purpose is to perform data augmentation on a given set of data. 
-        You will need to retrieve some data from the vector store, and use this information to generate a *list* of one or more entries of new data, with each entry having the following structure:
+        You will need to retrieve some data from the vector store, and use this information to generate a single entry of new data, which should have the following JSON structure:
         
         {model}
+
+        You should return your answer in JSON format only.
         
         As much as possible, try to make the augmented data similar to but distinct from existing entries in the vector store. 
+
+        Where possible, do not generate duplicate copies of data between invocations.
         
         You should try to generate new data that belong to different categories, instead of being fixated on just one category. 
         
@@ -72,27 +76,27 @@ def retrieve_and_augment_data(**context):
         {
             "context": retriever,
             "description": RunnablePassthrough(),
-            "model": lambda _: json.dumps({property: "str" for property in model.schema().get("properties")}, indent=2),
+            "model": lambda _: json.dumps({property.replace('"', "'"): "str" for property in model.schema().get("properties")}, indent=2),
         }
         | prompt
         | llm
         | parser
     )
 
+    test = lambda _: json.dumps({property: "str" for property in model.schema().get("properties")}, indent=2)
+    print(test(" "))
+
     iter_count = min(iter_count, MAX_ROWS)
     results = []
 
     for _ in range(iter_count):
-        try:
-            result = rag_chain.invoke(input)
-            if isinstance(result, list) and result:
-                results.extend(result)
-            else:
-                print(f"Invalid JSON output: {result}")
-        except Exception as e:
-            print(f"Error parsing result: {e}")
-            continue
+        results.append(rag_chain.invoke(input))
+        # if isinstance(result, list) and result:
+        #     results.extend(result)
+        # else:
+        #     print(f"Invalid JSON output: {result}")
 
+    print("Results are: ", results)
     if results:
         append_to_csv(filepath, data=results)
 
@@ -103,6 +107,8 @@ def retrieve_and_augment_data(**context):
 def append_to_csv(filepath, data):
     print("Appending to CSV")
     with open(filepath, mode="a", newline="", encoding="utf-8") as file:
+        print("Data is: ", data)
+        print("first element is: ", data[0])
         writer = csv.DictWriter(file, fieldnames=data[0].keys())
         if file.tell() == 0:
             writer.writeheader()
