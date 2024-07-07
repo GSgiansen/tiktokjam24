@@ -11,8 +11,10 @@ import os
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import Response, FileResponse
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
+import time
 import os 
 import jwt
 from typing import Annotated
@@ -133,8 +135,6 @@ async def trigger_dag_synthesize(request: SynthesizeDataRequest):
         dag_run_id=dag_run_id,
     )
 
-
-
     try:
         with client.ApiClient(configuration) as api_2_client:
             # Create an instance of the DAGRun API class
@@ -150,10 +150,11 @@ async def trigger_dag_synthesize(request: SynthesizeDataRequest):
 
 ### Gety csv from frontend and generate uuid for the file
 @app.post("/synthesize_data")
-async def synthesize_data(file: UploadFile,  input: str = Form(...), iter_count: int = Form(...)):
+async def synthesize_data(file: Annotated[UploadFile, Form()],  input: Annotated[str, Form()], iter_count: Annotated[int, Form()]):
     bucket_name = "synthesize_data"
     ### Upload the file path to the bucket
     filename = str(uuid.uuid4())
+    print(filename)
     filepath = f"{filename}/{filename}.csv"
 
     response =  supabase.storage\
@@ -163,13 +164,19 @@ async def synthesize_data(file: UploadFile,  input: str = Form(...), iter_count:
     
     classreq = SynthesizeDataRequest(dag_id="synthesize_data", conf={"filepath": filepath, "input": input, "iter_count": iter_count, "dirpath": "data"})
     await trigger_dag_synthesize(classreq)
+    
+    time.sleep(30)
+    
+    with open(f"{filename}.csv", "wb+") as f:
+        response = supabase.storage\
+            .from_("synthesize_data")\
+            .download(filename + "/generated.csv")       
+        f.write(response)
 
-    return filename
 
-
-
-
-
+    res = FileResponse(path=f"{filename}.csv", media_type="text/csv")
+    print(res)
+    return res 
 
 
 

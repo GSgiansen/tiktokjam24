@@ -33,16 +33,20 @@ export default function Home() {
         </ShimmerButton>
       </Link>
       <div className="flex flex-row gap-8 h-60">
-        <NeonGradientCard className="max-w-sm items-center justify-center text-center">
-          <span className="pointer-events-none z-10 h-full whitespace-pre-wrap bg-gradient-to-br from-[#ff2975] from-35% to-[#00FFF1] bg-clip-text text-center text-6xl font-bold leading-none tracking-tighter text-transparent dark:drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
-            Text Synthesis
-          </span>
-        </NeonGradientCard>
-        <NeonGradientCard className="max-w-sm items-center justify-center text-center">
-          <span className="pointer-events-none z-10 h-full whitespace-pre-wrap bg-gradient-to-br from-[#ff2975] from-35% to-[#00FFF1] bg-clip-text text-center text-6xl font-bold leading-none tracking-tighter text-transparent dark:drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
-            Automatic Model Creation
-          </span>
-        </NeonGradientCard>
+        <Link href={"/text-synthesis"}>
+          <NeonGradientCard className="max-w-sm items-center justify-center text-center">
+            <span className="pointer-events-none z-10 h-full whitespace-pre-wrap bg-gradient-to-br from-[#ff2975] from-35% to-[#00FFF1] bg-clip-text text-center text-6xl font-bold leading-none tracking-tighter text-transparent dark:drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
+              Text Synthesis
+            </span>
+          </NeonGradientCard>
+        </Link>
+        <Link href={"/upload"}>
+          <NeonGradientCard className="max-w-sm items-center justify-center text-center">
+            <span className="pointer-events-none z-10 h-full whitespace-pre-wrap bg-gradient-to-br from-[#ff2975] from-35% to-[#00FFF1] bg-clip-text text-center text-6xl font-bold leading-none tracking-tighter text-transparent dark:drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
+              Automatic Model Creation
+            </span>
+          </NeonGradientCard>
+        </Link>
       </div>
     </div>
   );
