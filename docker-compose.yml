@@ -286,6 +286,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    
+    ### dockerize fasstapi service as well
 
 volumes:
   postgres-db-volume:
