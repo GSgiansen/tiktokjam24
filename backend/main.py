@@ -1,7 +1,7 @@
 from datetime import datetime
 from io import BytesIO
 import uuid
-from fastapi import FastAPI, HTTPException, Query,Security,Depends, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Query,Security,Depends, UploadFile, Form, Header
 import pandas as pd
 from routers import users, classification_models, regression_models, projects
 from db.supabase import get_supabase_client
