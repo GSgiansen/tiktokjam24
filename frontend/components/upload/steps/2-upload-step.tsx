@@ -74,6 +74,7 @@ const UploadStep = ({
                 {...field}
                 id="csvfile"
                 type="file"
+                accept=".csv"
                 onChange={onChange}
                 value={value?.fileName}
               />

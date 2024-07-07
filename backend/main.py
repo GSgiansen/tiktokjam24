@@ -1,7 +1,7 @@
 from datetime import datetime
 from io import BytesIO
 import uuid
-from fastapi import FastAPI, HTTPException, Query,Security,Depends, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Query,Security,Depends, UploadFile, Form, Header
 import pandas as pd
 from routers import users, classification_models, regression_models, projects
 from db.supabase import get_supabase_client
@@ -13,6 +13,8 @@ from fastapi import HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
+import os 
+import jwt
 from typing import Annotated
 
 import airflow_client.client as client
@@ -40,16 +42,20 @@ app.add_middleware(
     allow_headers=["*"],  # Allowed headers
 )
 
-print("Attemptomg to connect to airflow")
-try:
-    configuration = client.Configuration(
-        host="http://airflow-webserver:8080/api/v1",
-        username="airflow",
-        password="airflow"
-    )
-except Exception as e:
-    print("stuck here ")
-    print("Error: %s\n" % e)
+# Dependency to get the Authorization header
+async def get_authorization_header(authorization: str = Header(...)):
+    jwt.decode(authorization.replace('Bearer', '').strip(), os.getenv("SUPABASE_SECRET_KEY")
+, audience="authenticated", algorithms=['HS256'])
+    if not authorization:
+        raise HTTPException(status_code=403, detail="Authorization header missing")
+    return authorization
+
+
+configuration = client.Configuration(
+    host="http://localhost:8080/api/v1",
+    username="airflow",
+    password="airflow"
+)
 
 security = HTTPBearer()
 
@@ -91,7 +97,7 @@ class SynthesizeDataRequest(BaseModel):
 
 
 @app.post("/trigger_dag/")
-async def trigger_dag(request: TriggerDagRequest):
+async def trigger_dag(request: TriggerDagRequest, authorization: str = Depends(get_authorization_header)):
     dag_id = request.dag_id
     conf = request.conf
     api_instance = dag_run_api.DAGRunApi(api_client)
