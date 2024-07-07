@@ -11,6 +11,7 @@ import os
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import Response
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 import os 
@@ -133,8 +134,6 @@ async def trigger_dag_synthesize(request: SynthesizeDataRequest):
         dag_run_id=dag_run_id,
     )
 
-
-
     try:
         with client.ApiClient(configuration) as api_2_client:
             # Create an instance of the DAGRun API class
@@ -163,8 +162,12 @@ async def synthesize_data(file: UploadFile,  input: str = Form(...), iter_count:
     
     classreq = SynthesizeDataRequest(dag_id="synthesize_data", conf={"filepath": filepath, "input": input, "iter_count": iter_count, "dirpath": "data"})
     await trigger_dag_synthesize(classreq)
+    
+    response =  supabase.storage\
+        .from_("synthesize_data/" + filename)\
+        .download(f"{filename}.csv")
 
-    return filename
+    return Response(content=response.data, media_type="text/csv")
 
 
 
