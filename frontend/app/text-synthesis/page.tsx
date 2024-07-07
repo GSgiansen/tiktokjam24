@@ -43,7 +43,7 @@ const UploadPage = () => {
         console.log(formData);
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/synthesize_data", {
+            const response = await fetch("http://128.199.130.222:8000/synthesize_data", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${accessToken}`,
