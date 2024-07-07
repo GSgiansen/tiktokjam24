@@ -78,8 +78,8 @@ const UploadPage = () => {
   });
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (isLastStep) {
-      // setIsCreating(true);
-      // setIsOpen(true);
+      setIsCreating(true);
+      setIsOpen(true);
       e.preventDefault();
       supabase.auth.getSession().then(({ data: { session } }) => {
         console.log(formData);
@@ -102,8 +102,8 @@ const UploadPage = () => {
           .then((data) => {
             setTimeout(() => {
               setIsCreating(false);
-              // router.push(`/project/${data.id}`);
-            }, 5000);
+              router.push(`/project/${data.id}`);
+            }, 2000);
           })
           .catch((error) => {
             console.error("Error:", error);

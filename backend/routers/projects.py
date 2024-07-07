@@ -46,22 +46,22 @@ async def create_project(name: Annotated[str, Form()], owner: Annotated[str, For
     print(f"Received columns: {columns[0]}")
     print(f"Received ml_method {ml_method}")
     print(f"json columns {postgres_array}")
-    # try:
-    #     contents = await file.read()
-    #     response = (supabase.from_("projects")\
-    #     .insert({"name": name, "owner": owner, "features": postgres_array, "target": target, "ml_method": ml_method})\
-    #     .execute())
-    #     data_json = json.loads(response.json())
-    #     data_entries = data_json['data']
-    #     print(data_entries)
-    #     supabase.storage\
-    #     .from_("projects/" + data_entries[0]["id"])\
-    #     .upload(file=contents,path="data.csv")
-    #     return JSONResponse(content={"id": data_entries[0]["id"]})
+    try:
+        contents = await file.read()
+        response = (supabase.from_("projects")\
+        .insert({"name": name, "owner": owner, "features": postgres_array, "target": target, "ml_method": ml_method})\
+        .execute())
+        data_json = json.loads(response.json())
+        data_entries = data_json['data']
+        print(data_entries)
+        supabase.storage\
+        .from_("projects/" + data_entries[0]["id"])\
+        .upload(file=contents,path="data.csv")
+        return JSONResponse(content={"id": data_entries[0]["id"]})
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     return {"message": f"Project creation failed {e}"} 
+    except Exception as e:
+        print(f"Error: {e}")
+        return {"message": f"Project creation failed {e}"} 
 
 #Retrieve a user's projects
 @router.get("/queryProjects")

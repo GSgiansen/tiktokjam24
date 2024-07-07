@@ -1,8 +1,20 @@
-# tiktokjam24
+# TikTok TechJam '24
 
 Repo for team RCH4CKERS
 
-# INIT
+# PROJECT_NAME
+
+This project aims to democratise access to Machine Learning (ML) by implementing an Automated Machine Learning (AutoML) pipeline which does eveything for the user from data processing to model training and testing. Users can then apply their model using other datasets. Additionally, this project also allows user to generate synthetic data using genAI.
+
+Main features include:
+- AutoML pipeline
+    - Data preprocessing
+    - Model training and testing
+    - Evaluation
+    - Prediction
+- Synthetic Data generation
+
+# Installation TODO
 
 1. Install and run Docker Desktop in the background
 2. Run `pip install "apache-airflow==2.9.2" apache-airflow-providers-google==10.1.0`
@@ -15,8 +27,6 @@ Repo for team RCH4CKERS
 7. Press graph and select node to see logs
 8. To stop press `Ctrl + C` and run `docker compose down`
 
-# Backend
-
 1. Obtain supabase credentials
 2. add credentials to local .env file in backend folder
 3. run the fastapi backend with `fastapi dev main.py `
@@ -26,6 +36,15 @@ Repo for team RCH4CKERS
 7. Proceed to the sign_in function and place your own credentials. Upon executing an access token will be generated.
 8. Save the access token somewhere
 9. You can now insert the access token in the top right authorise button and can use the restricted functions
+
+# Project Structure
+
+This project contains several key folders and files.
+
+In `/backend`, you can find code pertaining to FastAPI and Supabase.
+In `/dags`, you can find the AutoML and Data generation pipeline implemented using Apache Airflow DAGs.
+In `/frontend`, you can find relevant components for the wbepage.
+`Dockerfile` and `docker-compose.yml` contains the necessary information to build the docker image.
 
 
 # Errors
