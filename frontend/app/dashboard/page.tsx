@@ -18,7 +18,7 @@ const DashboardPage = async () => {
 
   try {
     const response = await fetch(
-      `http://127.0.0.1:8000/projects/queryProjects?owner=${userId}`,
+      `http://128.199.130.222:8000/projects/queryProjects?owner=${userId}`,
       {
         method: "GET",
         headers: {

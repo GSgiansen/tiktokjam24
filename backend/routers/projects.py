@@ -81,13 +81,11 @@ async def get_user_projects(owner: str):
 # Retrieve a project
 @router.get("/project")
 def get_project(project_id: Union[UUID, None] = None):
+    print("im here")
     try:
         if project_id:
-            project = supabase.from_("projects")\
-                .select("id", "name", "owner")\
-                .eq("id", project_id)\
-                .execute()
-
+            project = supabase.table("projects").select("id", "name", "owner").eq("id", project_id).execute()
+            print(project)
             if project:
                 return project
         else:
@@ -142,10 +140,24 @@ def delete_project(project_id: UUID):
         print(f"Error: {e}")
         return {"message": "Project deletion failed"}
     
+@router.get("/checkAdditionalPredict")
+async def check_additional_predict(project_id: Union[UUID, None] = None):
+    try:
+        result = supabase.from_("projects")\
+                .select("additional_predict").eq("id", str(project_id)).execute()
+        return result.data[0]
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=404)
 
 @router.post("/uploadPredict")
-async def upload_predict(project_id: Union[UUID, None] = None, file: UploadFile = File(...), authorization: str = Depends(get_authorization_header)):
+async def upload_predict(project_id: Annotated[str, Form()], file: Annotated[UploadFile, Form()], authorization: str = Depends(get_authorization_header)):
     try:
+        #update supabase field additional_predict
+        supabase.from_("projects")\
+        .update({"additional_predict": False})\
+        .eq("id", project_id)\
+        .execute()
         contents = await file.read()
         supabase.storage\
         .from_("projects/" + project_id)\
@@ -154,15 +166,25 @@ async def upload_predict(project_id: Union[UUID, None] = None, file: UploadFile 
 
     except Exception as e:
         print(f"Error: {e}")
-        return {"message": f"Project creation failed {e}"} 
+        return {"message": f"Upload failed {e}"} 
     
 @router.get("/checkPredictFileExist")
 async def check_predict_file_exist(project_id: Union[UUID, None] = None):
     print("/projects/")
     try:
         supabase.storage\
-            .from_("projects").create_signed_url("f42e68e6-8f80-4e60-9c4e-caa1ff26d8c1/add_predict.csv", 60)
+            .from_("projects").create_signed_url(str(project_id)+"/add_predict.csv", 60)
         return {}
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=404)
+
+@router.get("/checkPredictResultFileExist")
+async def check_predict_result_file_exist(project_id: Union[UUID, None] = None):
+    try:
+        url = supabase.storage\
+            .from_("projects").create_signed_url(str(project_id)+"/data/add_predict_res.csv", 60)
+        return url
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=404)
