@@ -10,7 +10,6 @@ const UploadPage = () => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [uploadedFile, setUploadedFile] = useState(null);
-    const [downloadedFile, setDownloadedFile] = useState(null);
     const [authenticated, setAuthenticated] = useState(false);
     const [accessToken, setAccessToken] = useState<string>("");
 
@@ -38,7 +37,7 @@ const UploadPage = () => {
         formData.append("file", uploadedFile);
 
         try {
-            const response = await fetch("some-endpoint-from-gs", {
+            const response = await fetch("http://localhost:8000/synthesize-data", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
@@ -46,9 +45,12 @@ const UploadPage = () => {
                 body: formData,
             });
 
-            const results = await response.json();
-            // TODO:
-            setDownloadedFile(results);
+            await response.json()
+                .then(res => res.blob())
+                .then((blob) => {
+                    let file = window.URL.createObjectURL(blob);
+                    window.location.assign(file);
+                })
         } catch (error) {
             console.error(error);
         }
