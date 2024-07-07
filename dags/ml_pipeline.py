@@ -460,7 +460,7 @@ with DAG(
         'retry_delay': timedelta(minutes=5)
     },
     description='ML Pipeline',
-    schedule_interval='@daily',
+    schedule_interval=None,
     start_date=datetime(2024, 6, 20),
     dag_id='ml_pipeline',
 ) as dag:

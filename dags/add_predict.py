@@ -215,7 +215,7 @@ with DAG(
         'retry_delay': timedelta(minutes=5)
     },
     description='Additional adhoc predict pipeline',
-    schedule_interval='@daily',
+    schedule_interval='None',
     start_date=datetime(2024, 6, 20),
     dag_id='add_predict_pipeline',
 ) as dag:
