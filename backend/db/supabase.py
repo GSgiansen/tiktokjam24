@@ -13,6 +13,8 @@ class SupabaseClient:
 
     def _initialize_client(self):
         load_dotenv()
+        print("trying to connect to supabase")
+        print("SUPABASE_URL", os.getenv('SUPABASE_URL'))
         api_url: str = os.getenv('SUPABASE_URL')
         key: str = os.getenv('SUPABASE_KEY')
         self.client: Client = create_client(api_url, key)

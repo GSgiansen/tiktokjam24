@@ -136,8 +136,9 @@ services:
       - airflow-triggerer
     volumes:
       - ./backend:/backend
-    environment:
-      - LOAD_ENV=.env
+    env_file:
+      - .env
+    # command: ["/bin/bash", "-c", "/backend/wait-for-airflow.sh"]
 
 
   airflow-webserver:
