@@ -62,6 +62,7 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
     # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
@@ -117,6 +118,27 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    ### dockerize fasstapi service as well
+  fastapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+      network: host
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - airflow-webserver
+      - airflow-scheduler
+      - airflow-worker
+      - airflow-triggerer
+    volumes:
+      - ./backend:/backend
+    environment:
+      - LOAD_ENV=.env
+
 
   airflow-webserver:
     <<: *airflow-common
@@ -287,7 +309,5 @@ services:
       airflow-init:
         condition: service_completed_successfully
     
-    ### dockerize fasstapi service as well
-
 volumes:
   postgres-db-volume:

@@ -40,12 +40,16 @@ app.add_middleware(
     allow_headers=["*"],  # Allowed headers
 )
 
-
-configuration = client.Configuration(
-    host="http://airflow-webserver:8080/api/v1",
-    username="airflow",
-    password="airflow"
-)
+print("Attemptomg to connect to airflow")
+try:
+    configuration = client.Configuration(
+        host="http://airflow-webserver:8080/api/v1",
+        username="airflow",
+        password="airflow"
+    )
+except Exception as e:
+    print("stuck here ")
+    print("Error: %s\n" % e)
 
 security = HTTPBearer()
 
