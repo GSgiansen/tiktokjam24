@@ -36,9 +36,9 @@ const UploadPage = () => {
         setLoading(true);
 
         const formData = new FormData();
-        formData.append("file", null);
-        formData.append("input", inputRef.current)
-        formData.append("iter_count", iterCountRef.current)
+        formData.append("file", uploadedFile);
+        formData.append("input", inputRef.current.value)
+        formData.append("iter_count", iterCountRef.current.value)
 
         console.log(formData);
 
@@ -47,17 +47,15 @@ const UploadPage = () => {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
                 },
                 body: formData,
             });
 
-            await response.json();
-                // .then(res => res.blob())
-                // .then((blob) => {
-                //     let file = window.URL.createObjectURL(blob);
-                //     window.location.assign(file);
-                // })
+            await response.blob()
+                .then((blob) => {
+                    let file = window.URL.createObjectURL(blob);
+                    window.location.assign(file);
+                })
         } catch (error) {
             console.error(error);
         }
@@ -178,12 +176,12 @@ const UploadPage = () => {
                 </div>
                 <div>
                     <div className="flex justify-center">
-                        <label htmlFor="input" ref={inputRef} className="block p-2 text-sm font-medium text-gray-900 dark:text-white">Do you have any specific requirements for the augmented data?</label>
-                        <input type="text" id="input" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                        <label htmlFor="input" className="block p-2 text-sm font-medium text-gray-900 dark:text-white">Do you have any specific requirements for the augmented data?</label>
+                        <input type="text" id="input" ref={inputRef} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
                     </div>
                     <div className="flex justify-center">
-                        <label htmlFor="iter_count" ref={iterCountRef} className="block p-2 text-sm font-medium text-gray-900 dark:text-white">How many new rows would you like to generate? (MAX 200)</label>
-                        <input type="number" id="iter_count" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                        <label htmlFor="iter_count" className="block p-2 text-sm font-medium text-gray-900 dark:text-white">How many new rows would you like to generate? (MAX 200)</label>
+                        <input type="number" id="iter_count" ref={iterCountRef}className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
                     </div>
                 </div>
                 <div className="flex justify-center">
