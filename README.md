@@ -15,7 +15,7 @@ Main features include:
 - Synthetic Data generation
 
 # Installation / Usage
-1. Our project is hosted on https://143.198.216.162:3000/
+1. Our project is hosted on http://143.198.216.162:3000/
 2. To run it locally, read the installation for devs
 
 # Project Structure
