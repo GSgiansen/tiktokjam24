@@ -1,67 +1,55 @@
-import React, { useState } from "react";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+import React, { useEffect, useState } from "react";
+import { Spinner } from "../ui/spinner";
+import { createClient } from "@/utils/supabase/client";
+import PredictStatus from "./predict-status";
 
-type FileUploaderProps = {
+type PredictProps = {
   project_id: string;
 };
 
-const FileUploader = ({ project_id }: FileUploaderProps) => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+const Predict = ({ project_id }: PredictProps) => {
+  const [loading, setLoading] = useState(false);
+  const [additionalPredict, setAdditionalPredict] = useState<boolean>(false);
+  const supabase = createClient();
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file && file.type === "text/csv") {
-      setSelectedFile(file);
-      setErrorMessage("");
-    } else {
-      setSelectedFile(null);
-      setErrorMessage("Please select a CSV file.");
-    }
-  };
-
-  const handleUpload = () => {
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      fetch("http://127.0.0.1:8000/projects/uploadPredict", {
-        method: "POST",
-        body: formData,
+  useEffect(() => {
+    setLoading(true);
+    fetch(
+      `http://128.199.130.222:8080/projects/checkPredictFileExist?project_id=${project_id}`
+    )
+      .then((response) => {
+        console.log(response.status);
+        if (response.status == 200) {
+          setAdditionalPredict(true);
+        }
+        setLoading(false);
+        return response.json();
       })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Upload success:", data);
-          // Reset selected file after upload
-          setSelectedFile(null);
-        })
-        .catch((error) => {
-          console.error("Error uploading file:", error);
-        });
-    }
-  };
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log(session);
+    });
+  }, []);
 
   return (
     <div className="p-4 shadow-md rounded-md">
-      <Input
-        type="file"
-        accept=".csv"
-        onChange={handleFileChange}
-        className="mb-4"
-      />
-      {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
-      <Button
-        onClick={handleUpload}
-        className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${
-          selectedFile ? "" : "opacity-50 cursor-not-allowed"
-        }`}
-        disabled={!selectedFile}
-      >
-        Upload File
-      </Button>
+      {loading ? (
+        <div className="flex items-center justify-center">
+          <Spinner /> {/* Replace with your Spinner component */}
+        </div>
+      ) : (
+        <>
+          <PredictStatus status={additionalPredict} project_id={project_id} />
+        </>
+      )}
     </div>
   );
 };
 
-export default FileUploader;
+export default Predict;

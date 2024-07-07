@@ -16,7 +16,7 @@ const MetricsComponent = ({ id }: MetricsComponentProps) => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/classification_models/classification_model?project_id=${id}`,
+          `http://128.199.130.222:8000/classification_models/classification_model?project_id=${id}`,
           {
             method: "GET",
             headers: {

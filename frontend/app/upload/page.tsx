@@ -91,7 +91,7 @@ const UploadPage = () => {
         finalFormData.append("columns", JSON.stringify(formData.columns));
         finalFormData.append("ml_method", formData.ml_method);
         console.log(finalFormData);
-        fetch("http://127.0.0.1:8000/projects/project", {
+        fetch("http://128.199.130.222:8000/projects/project", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`, // Include your authorization token
