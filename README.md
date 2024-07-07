@@ -2,7 +2,7 @@
 
 Repo for team RCH4CKERS
 
-# PROJECT_NAME
+# SimplifyML
 
 This project aims to democratise access to Machine Learning (ML) by implementing an Automated Machine Learning (AutoML) pipeline which does eveything for the user from data processing to model training and testing. Users can then apply their model using other datasets. Additionally, this project also allows user to generate synthetic data using genAI.
 
@@ -14,7 +14,25 @@ Main features include:
     - Prediction
 - Synthetic Data generation
 
-# Installation TODO
+# Installation / Usage
+1. Our project is hosted on https://143.198.216.162:3000/
+2. To run it locally, read the installation for devs
+
+# Project Structure
+
+This project contains several key folders and files.
+
+In `/backend`, you can find code pertaining to FastAPI and Supabase.
+In `/dags`, you can find the AutoML and Data generation pipeline implemented using Apache Airflow DAGs.
+In `/frontend`, you can find relevant components for the wbepage.
+`Dockerfile` and `docker-compose.yml` contains the necessary information to build the docker image.
+
+
+# Errors
+
+1. If rateLimited error hit in the console, it means that too many users have tried to register to supabase, and thus need to give it about an hour to reset
+
+# Installation for Devs
 
 1. Install and run Docker Desktop in the background
 2. Run `pip install "apache-airflow==2.9.2" apache-airflow-providers-google==10.1.0`
@@ -36,17 +54,3 @@ Main features include:
 7. Proceed to the sign_in function and place your own credentials. Upon executing an access token will be generated.
 8. Save the access token somewhere
 9. You can now insert the access token in the top right authorise button and can use the restricted functions
-
-# Project Structure
-
-This project contains several key folders and files.
-
-In `/backend`, you can find code pertaining to FastAPI and Supabase.
-In `/dags`, you can find the AutoML and Data generation pipeline implemented using Apache Airflow DAGs.
-In `/frontend`, you can find relevant components for the wbepage.
-`Dockerfile` and `docker-compose.yml` contains the necessary information to build the docker image.
-
-
-# Errors
-
-1. If rateLimited error hit in the console, it means that too many users have tried to register to supabase, and thus need to give it about an hour to reset
