@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import BytesIO
-from fastapi import FastAPI, HTTPException, Query,Security,Depends
+from fastapi import FastAPI, HTTPException, Query,Security,Depends, Header
 import pandas as pd
 from routers import users, classification_models, regression_models, projects
 from db.supabase import get_supabase_client
@@ -11,6 +11,8 @@ from fastapi import HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
+import os 
+import jwt
 
 import airflow_client.client as client
 from airflow_client.client.api import config_api
@@ -36,6 +38,14 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],  # Allowed HTTP methods
     allow_headers=["*"],  # Allowed headers
 )
+
+# Dependency to get the Authorization header
+async def get_authorization_header(authorization: str = Header(...)):
+    jwt.decode(authorization.replace('Bearer', '').strip(), os.getenv("SUPABASE_SECRET_KEY")
+, audience="authenticated", algorithms=['HS256'])
+    if not authorization:
+        raise HTTPException(status_code=403, detail="Authorization header missing")
+    return authorization
 
 
 configuration = client.Configuration(
@@ -74,7 +84,7 @@ class TriggerDagRequest(BaseModel):
 
 
 @app.post("/trigger_dag/")
-async def trigger_dag(request: TriggerDagRequest):
+async def trigger_dag(request: TriggerDagRequest, authorization: str = Depends(get_authorization_header)):
     dag_id = request.dag_id
     conf = request.conf
     api_instance = dag_run_api.DAGRunApi(api_client)
