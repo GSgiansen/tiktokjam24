@@ -17,25 +17,31 @@ const UploadStep = ({
 }: StepProps) => {
   const [selectColumns, setSelectColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const { setValue, control } = form;
   const [selectedFile, setSelectedFile] = useState<File>();
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target?.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      const formData = new FormData();
-      formData.append("file", file);
-      updateForm({ csvFile: file });
-      try {
-        setLoading(true);
-        const response = await fetch("/api", {
-          method: "POST",
-          body: formData,
-        });
-        const data = await response.json();
-        setLoading(false);
-        setSelectColumns(data.headers);
-      } catch (err) {
-        console.error(err);
+      if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+        setSelectedFile(file);
+        const formData = new FormData();
+        formData.append("file", file);
+        updateForm({ csvFile: file });
+        try {
+          setLoading(true);
+          const response = await fetch("/api", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await response.json();
+          setLoading(false);
+          setSelectColumns(data.headers);
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        alert("Invalid file type");
+        console.error("Invalid file type");
       }
     } else {
       console.error("No file found");
@@ -61,6 +67,7 @@ const UploadStep = ({
         <Label htmlFor="csvfile">CSV File</Label>
         <Controller
           name={"csvfile"}
+          control={control}
           render={({ field: { value, ...field } }) => {
             return (
               <Input
@@ -87,8 +94,7 @@ const UploadStep = ({
                     key={column}
                     className="flex flex-row gap-2 items-center"
                   >
-                    <Checkbox key={column}>{column}</Checkbox>
-                    <Label>{column}</Label>
+                    <li>{column}</li>
                   </div>
                 );
               })}

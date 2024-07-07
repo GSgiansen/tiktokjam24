@@ -60,28 +60,15 @@ def update_table(project_id):
 
 def remove_whitespace(df):
     """Remove leading and trailing whitespace from all string columns."""
+
     for col in df.select_dtypes(include=['object']):
         df[col] = df[col].str.strip()
     return df
 
 def remove_duplicates(df):
     """Remove duplicate rows from data."""
+
     return df.drop_duplicates()
-
-def separate_nan_target(df):
-    """Separate rows with NaN values in the target column."""
-    target_col = df.columns[-1]
-    
-    data_with_target = df.dropna(subset=[target_col])
-    data_without_target = df[df[target_col].isna()]
-    
-    # data_with_target.to_csv('data/data_with_target.csv', index=False)
-    # data_without_target.to_csv('data/data_without_target.csv', index=False)
-    
-    print(f"Rows with target: {len(data_with_target)}")
-    print(f"Rows without target: {len(data_without_target)}")
-
-    return data_with_target
 
 def process_data(data):
     """Preprocess features and target columns separately for training"""
@@ -92,17 +79,11 @@ def process_data(data):
     # remove duplicates
     data = remove_duplicates(data)
 
-    # separate nan rows in target
-    data = separate_nan_target(data)
-
-    # split into features and target (target is last column)
-    X = data.drop(data.columns[-1], axis=1)
-    y = data[data.columns[-1]]
+    X = data
 
     # split into categorical and numerical features
     categorical = X.select_dtypes(include=['object'])
     numerical = X.select_dtypes(exclude=['object'])
-    text = [] # to find text columns
 
     # process categorical features
     categorical = process_categorical_df(categorical)
@@ -110,15 +91,12 @@ def process_data(data):
     # process numerical features
     numerical = process_numerical_df(numerical)
 
-    # process text features
-    # text = process_text_df(text)
-
-    process_data = pd.concat([categorical, numerical, y], axis=1) # to add text
+    process_data = pd.concat([categorical, numerical], axis=1)
     process_data = process_data.dropna()
 
     return process_data
 
-def process_categorical_df(df, is_train=True):
+def process_categorical_df(df):
     """Fill Nan values with mode for categorical features"""
 
     for col in df.columns:
@@ -156,20 +134,9 @@ def process_numerical_df(df):
 
     return scaled_df
 
-def process_text_df(df):
-    """Process text features using TF-IDF"""
-
-    for col in df:
-        tfidf = TfidfVectorizer(max_features=100)  # Adjust max_features as needed
-        tfidf_matrix = tfidf.fit_transform(df[col])
-        tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=[f'{col}_tfidf_{i}' for i in range(tfidf_matrix.shape[1])])
-        df = pd.concat([df.drop(col, axis=1), tfidf_df], axis=1)
-
-    return df
-
 # Pipeline
 def predict(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     folder_name = 'data'
     project_id = context['dag_run'].conf.get('project_id')
 
@@ -197,11 +164,16 @@ def predict(**context):
         print(f"Error downloading selected features: {e}")
         raise
 
+    # Get target column
+    try:
+        response = supabase.table('projects').select('target').eq('id', project_id).execute()
+        target_col = response.data[0]['target']
+    except Exception as e:
+        print(f"Error getting target column: {e}")
+        raise
+
     # Predict
-    data = process_data(data)
-    
-    # Temporary remove last col
-    X = data.iloc[:, :-1]
+    X = process_data(data)
 
     # Handle non-numerical columns
     for col in X.columns:
@@ -215,7 +187,7 @@ def predict(**context):
 
     # Save prediction
     try:
-        data['prediction'] = y_pred
+        data[target_col] = y_pred
         with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as add_predict_file:
             data.to_csv(add_predict_file.name, index=False)
 

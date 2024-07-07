@@ -5,7 +5,7 @@ import { Form } from "@/components/ui/form";
 import { useMultiplestepForm } from "@/hooks/useMultiplestepForm";
 import { FormItems } from "@/types/formItems";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "@/components/upload/form-schema";
@@ -16,19 +16,32 @@ import { redirect, useRouter } from "next/navigation";
 import ProjectInfoStep from "@/components/upload/steps/1-project-info-step";
 import UploadStep from "@/components/upload/steps/2-upload-step";
 import SummaryStep from "@/components/upload/steps/3-summary-step";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const UploadPage = () => {
+  const supabase = createClient();
+
   const initialValues: FormItems = {
     name: "",
     csvFile: undefined,
     columns: [],
     targetColumn: "",
+    ml_method: "",
   };
   const [formData, setFormData] = useState(initialValues);
   const router = useRouter();
+  const [isCreating, setIsCreating] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const supabase = createClient();
   const {
     previousStep,
     nextStep,
@@ -49,6 +62,8 @@ const UploadPage = () => {
   });
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (isLastStep) {
+      setIsCreating(true);
+      setIsOpen(true);
       e.preventDefault();
       supabase.auth.getSession().then(({ data: { session } }) => {
         console.log(formData);
@@ -66,8 +81,10 @@ const UploadPage = () => {
         })
           .then((response) => response.json())
           .then((data) => {
-            console.log("Success:", data);
-            router.push(`/project/${data.id}`);
+            setTimeout(() => {
+              setIsCreating(false);
+              router.push(`/project/${data.id}`);
+            }, 5000); // 10 seconds delay
           })
           .catch((error) => {
             console.error("Error:", error);
@@ -89,6 +106,21 @@ const UploadPage = () => {
   return (
     <div className="flex flex-row gap-3 p-4">
       <SideBar currentStepIndex={currentStepIndex} goTo={goTo} />
+      <Dialog
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="max-w-md mx-auto"
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Creating your project...</DialogTitle>
+            <DialogDescription>
+              <Spinner />
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
       <div className="grow">
         <Form {...form}>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -126,6 +158,7 @@ const UploadPage = () => {
               </Button>
               <div className="relative after:pointer-events-none after:absolute after:inset-px after:rounded-[11px] after:shadow-highlight after:shadow-white/10 focus-within:after:shadow-[#77f6aa] after:transition">
                 <Button
+                  disabled={isCreating}
                   type="submit"
                   className="relative text-neutral-200 bg-neutral-900 border border-black/20 shadow-input shadow-black/10 rounded-xl hover:text-white"
                 >

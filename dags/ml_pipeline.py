@@ -13,9 +13,7 @@ import tempfile
 import joblib
 from backend.db import get_supabase_client
 import sklearn.preprocessing as preprocessing
-from sklearn.feature_extraction.text import TfidfVectorizer
-import sklearn.linear_model as linear_model
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_error, accuracy_score, precision_score
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, f_classif, f_regression
 
@@ -33,22 +31,18 @@ def remove_duplicates(df):
     """Remove duplicate rows from data."""
     return df.drop_duplicates()
 
-def separate_nan_target(df):
+def separate_nan_target(df, target_col):
     """Separate rows with NaN values in the target column."""
-    target_col = df.columns[-1]
     
     data_with_target = df.dropna(subset=[target_col])
     data_without_target = df[df[target_col].isna()]
-    
-    # data_with_target.to_csv('data/data_with_target.csv', index=False)
-    # data_without_target.to_csv('data/data_without_target.csv', index=False)
     
     print(f"Rows with target: {len(data_with_target)}")
     print(f"Rows without target: {len(data_without_target)}")
 
     return data_with_target
 
-def process_data(data):
+def process_data(data, target_col):
     """Preprocess features and target columns separately for training"""
 
     # remove whitespace
@@ -58,16 +52,15 @@ def process_data(data):
     data = remove_duplicates(data)
 
     # separate nan rows in target
-    data = separate_nan_target(data)
+    data = separate_nan_target(data, target_col)
 
     # split into features and target (target is last column)
-    X = data.drop(data.columns[-1], axis=1)
-    y = data[data.columns[-1]]
+    X = data.drop(columns=[target_col])
+    y = data[target_col]
 
     # split into categorical and numerical features
     categorical = X.select_dtypes(include=['object'])
     numerical = X.select_dtypes(exclude=['object'])
-    text = [] # to find text columns
 
     # process categorical features
     categorical = process_categorical_df(categorical)
@@ -75,15 +68,12 @@ def process_data(data):
     # process numerical features
     numerical = process_numerical_df(numerical)
 
-    # process text features
-    # text = process_text_df(text)
-
-    process_data = pd.concat([categorical, numerical, y], axis=1) # to add text
+    process_data = pd.concat([categorical, numerical, y], axis=1)
     process_data = process_data.dropna()
 
     return process_data
 
-def process_categorical_df(df, is_train=True):
+def process_categorical_df(df):
     """Fill Nan values with mode for categorical features"""
 
     for col in df.columns:
@@ -120,17 +110,6 @@ def process_numerical_df(df):
     scaled_df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
 
     return scaled_df
-
-def process_text_df(df):
-    """Process text features using TF-IDF"""
-
-    for col in df:
-        tfidf = TfidfVectorizer(max_features=100)  # Adjust max_features as needed
-        tfidf_matrix = tfidf.fit_transform(df[col])
-        tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=[f'{col}_tfidf_{i}' for i in range(tfidf_matrix.shape[1])])
-        df = pd.concat([df.drop(col, axis=1), tfidf_df], axis=1)
-
-    return df
 
 def train_model(df):
     """Train model on preprocessed data"""
@@ -175,34 +154,26 @@ def choose_model(X, y):
 
     # if y is numerical
     if y.dtype in [np.int64, np.float64]:
-        # model = linear_model.LinearRegression()
-        # x = X.select_dtypes(exclude=['object'])
         model = RandomForestRegressor(n_estimators=50, max_depth=10, min_samples_split=5)
         print("Linear Regression")
     else:
-        # model = linear_model.LogisticRegression()
-        # x = X.select_dtypes(exclude=['object'])
         model = RandomForestClassifier(n_estimators=50, max_depth=10, min_samples_split=5)
         print("Logistic Regression")
-
-    # can return set of models in future
 
     return X, model
 
 def fit_model(model, X, y):
     """Fit model to data"""
 
-    # can implement CV here in future
-
     model.fit(X, y)
 
     return model
 
-def test_model(model, test, selected_features):
+def test_model(model, test, selected_features, target_col):
     """Test trained model on test data and return metric"""
 
     # process data
-    test = process_data(test)
+    test = process_data(test, target_col)
 
     # split into features and target (target is last column)
     X_test = test.drop(test.columns[-1], axis=1)
@@ -219,13 +190,6 @@ def test_model(model, test, selected_features):
     X_test = X_test.apply(pd.to_numeric, errors='coerce')
     X_test = X_test.fillna(X_test.mean())
 
-    # test model
-    # if y_test.dtype in [np.int64, np.float64]:
-    #     y_pred = model.predict(X_test.select_dtypes(exclude=['object']))
-    #     metric = get_metric(y_test, y_pred)
-    # else:
-    #     y_pred = model.predict(X_test.select_dtypes(exclude=['object']))
-    #     metric = get_metric(y_test, y_pred)
     y_pred = model.predict(X_test)
     metric = get_metric(y_test, y_pred)
 
@@ -235,11 +199,9 @@ def get_metric(y_true, y_pred):
     """Return metric based on target type"""
 
     if y_true.dtype in ['int64', 'float64']:
-        return mean_squared_error(y_true, y_pred)
+        return {"loss": mean_squared_error(y_true, y_pred)}
     else:
-        return accuracy_score(y_true, y_pred)
-    
-    # can implement more metrics in future
+        return {"accuracy": accuracy_score(y_true, y_pred), "precision": precision_score(y_true, y_pred)}
 
 def upload_file(file_path, storage_path, file_name, bucket):
     """Upload file to Supabase storage"""
@@ -279,7 +241,7 @@ def upload_file(file_path, storage_path, file_name, bucket):
 
 # prepare data
 def prepare_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -323,7 +285,7 @@ def prepare_data(**context):
     print('Data loaded and split into train and test data')
 
 def preprocess_train_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -335,8 +297,16 @@ def preprocess_train_data(**context):
         print(f"Error downloading project data: {e}")
         raise
 
+    # Get target column
+    try:
+        response = supabase.table('projects').select('target').eq('id', project_id).execute()
+        target_col = response.data[0]['target']
+    except Exception as e:
+        print(f"Error getting target column: {e}")
+        raise
+
     # Process data
-    processed_data = process_data(data)
+    processed_data = process_data(data, target_col)
     print("Data processed")
 
     # Save data
@@ -361,7 +331,7 @@ def preprocess_train_data(**context):
     print('Processed train data saved')
 
 def preprocess_test_data(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -373,7 +343,15 @@ def preprocess_test_data(**context):
         print(f"Error downloading project data: {e}")
         raise
 
-    processed_data = process_data(data)
+    # Get target column
+    try:
+        response = supabase.table('projects').select('target').eq('id', project_id).execute()
+        target_col = response.data[0]['target']
+    except Exception as e:
+        print(f"Error getting target column: {e}")
+        raise
+
+    processed_data = process_data(data, target_col)
     print("Data processed")
 
      # Save data
@@ -398,7 +376,7 @@ def preprocess_test_data(**context):
     print('Processed train data saved')
 
 def train_and_test_model(**context):
-    bucket_name = 'datamall'
+    bucket_name = 'projects'
     project_id = context['dag_run'].conf.get('project_id')
     folder_name = 'data'
 
@@ -408,14 +386,44 @@ def train_and_test_model(**context):
         train_data = pd.read_csv(io.BytesIO(train_bytes))
         test_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{folder_name}/processed_test_data.csv')
         test_data = pd.read_csv(io.BytesIO(test_bytes))
+        target_col = supabase.table('projects').select('target').eq('id', project_id).execute().data[0]['target']
     except Exception as e:
         print(f"Error downloading project data: {e}")
         raise
 
     model, selected_features = train_model(train_data)
-    metric = test_model(model, test_data, selected_features)
+    metric = test_model(model, test_data, selected_features, target_col)
 
-    print(f'Model tested with metric: {metric}')
+    name = f"Run {datetime.now()}"
+
+    if len(metric) == 1:  # Regression model
+        _ = (
+            supabase.table("regression_models")
+            .insert(
+                {
+                    "epoch": 50,
+                    "loss": metric.get("loss"),
+                    "name": name,
+                    "project_id": project_id,
+                }
+            )
+            .execute()
+        )
+    elif len(metric) == 2:  # Classification model
+        _ = (
+            supabase.table("classification_models")
+            .insert(
+                {
+                    "accuracy": metric.get("accuracy"),
+                    "precision": metric.get("precision"),
+                    "name": name,
+                    "project_id": project_id,
+                }
+            )
+            .execute()
+        )
+
+    print(f"Model tested with metric: {metric}")
 
     # Save model
     try:
@@ -442,65 +450,8 @@ def train_and_test_model(**context):
             print(f"Error cleaning up temporary files: {cleanup_error}")
 
     print('Model and selected features saved')
-    ## Do smth w metric
 
     print(metric)
-
-def predict(**context):
-    bucket_name = 'datamall'
-    project_id = context['dag_run'].conf.get('project_id')
-    folder_name = 'data'
-
-    # Load model, features and data
-    try:
-        model_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{folder_name}/model.pkl')
-        model = joblib.load(io.BytesIO(model_bytes))
-        data_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/predict.csv')
-        data = pd.read_csv(io.BytesIO(data_bytes))
-        features_bytes = supabase.storage.from_(bucket_name).download(f'{project_id}/{folder_name}/selected_features.pkl')
-        selected_features = joblib.load(io.BytesIO(features_bytes))
-    except Exception as e:
-        print(f"Error downloading model: {e}")
-        raise
-
-    # Process data
-    data = process_data(data)
-
-    # Make predictions
-
-    X = data.drop(data.columns[-1], axis=1)
-    
-    # Handle non-numerical columns
-    for col in X.columns:
-        if X[col].dtype == 'object':
-            le = preprocessing.LabelEncoder()
-            X[col] = le.fit_transform(X[col].astype(str))
-
-    X = X[selected_features]  # Use only selected features
-    predictions = model.predict(X)
-    data['predictions'] = predictions
-
-    # Save predictions
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as predictions_file:
-            data.to_csv(predictions_file.name, index=False)
-            
-            predictions_file_path = predictions_file.name
-
-            # Upload to Supabase storage
-            upload_file(predictions_file_path, f'{project_id}/{folder_name}', 'predictions.csv', bucket_name)
-    except Exception as e:
-        print(f"Error uploading predictions: {e}")
-        raise
-    finally:
-        # Cleanup temporary files
-        try:
-            os.remove(predictions_file_path)
-        except Exception as cleanup_error:
-            print(f"Error cleaning up temporary files: {cleanup_error}")
-
-    print('Predictions saved')
-
 
 with DAG(
     default_args = {
@@ -535,18 +486,12 @@ with DAG(
         python_callable=train_and_test_model
     )
 
-    predict = PythonOperator(
-        task_id='predict',
-        python_callable=predict
-    )
-
     end = DummyOperator(task_id='end')
 
     start >> \
     prepare_data >> \
     [preprocess_train_data, preprocess_test_data] >> \
     train_and_test_model >> \
-    predict >> \
     end
 
 

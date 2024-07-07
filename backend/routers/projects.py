@@ -4,6 +4,7 @@ from models import Project
 from db.supabase import  get_supabase_client
 from typing import Union
 from uuid import UUID
+import uuid
 import bcrypt
 from typing import Annotated
 import json
@@ -20,23 +21,31 @@ def project_exists(name: str = None, owner: UUID = None):
 # Create a new project
 @router.post("/project")
 async def create_project(name: Annotated[str, Form()], owner: Annotated[str, Form()], file: Annotated[UploadFile, Form()], target: Annotated[str, Form()], columns: Annotated[List[str], Form()], ml_method: Annotated[str, Form()]):
+    print(columns)
+    json_array_str = columns[0]  # Assuming there's only one element in the list
+    json_array = json.loads(json_array_str)
+
+    # Convert the JSON array to PostgreSQL array literal format
+    postgres_array = "{" + ",".join(f'"{col}"' for col in json_array) + "}"
+
     print(f"Received name: {name}")
-    print(f"Received name: {owner}")
-    print(f"Received name: {file}")
-    print(f"Received name: {target}")
-    print(f"Received name: {columns}")
-    print(f"Received name: {ml_method}")
+    print(f"Received owner: {owner}")
+    print(f"Received file: {file}")
+    print(f"Received target: {target}")
+    print(f"Received columns: {columns[0]}")
+    print(f"Received ml_method {ml_method}")
+    print(f"json columns {postgres_array}")
     try:
         contents = await file.read()
         response = (supabase.from_("projects")\
-        .insert({"name": name, "owner": owner, "features": columns, "target": target, "ml_method": ml_method})\
+        .insert({"name": name, "owner": owner, "features": postgres_array, "target": target, "ml_method": ml_method})\
         .execute())
         data_json = json.loads(response.json())
         data_entries = data_json['data']
         print(data_entries)
         supabase.storage\
         .from_("projects/" + data_entries[0]["id"])\
-        .upload(file=contents,path=file.filename)
+        .upload(file=contents,path="data.csv")
         return JSONResponse(content={"id": data_entries[0]["id"]})
 
     except Exception as e:
@@ -48,7 +57,7 @@ async def create_project(name: Annotated[str, Form()], owner: Annotated[str, For
 async def get_user_projects(owner: str):
     try:
         projects = supabase.from_("projects")\
-            .select("id", "name", "owner")\
+            .select("id", "name", "owner", "ml_method")\
             .eq("owner", owner)\
             .execute()
         if projects:
