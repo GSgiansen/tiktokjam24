@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -10,6 +10,8 @@ const UploadPage = () => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [uploadedFile, setUploadedFile] = useState(null);
+    const inputRef = useRef("");
+    const iterCountRef = useRef(0);
     const [authenticated, setAuthenticated] = useState(false);
     const [accessToken, setAccessToken] = useState<string>("");
 
@@ -34,23 +36,28 @@ const UploadPage = () => {
         setLoading(true);
 
         const formData = new FormData();
-        formData.append("file", uploadedFile);
+        formData.append("file", null);
+        formData.append("input", inputRef.current)
+        formData.append("iter_count", iterCountRef.current)
+
+        console.log(formData);
 
         try {
-            const response = await fetch("http://localhost:8000/synthesize-data", {
+            const response = await fetch("http://127.0.0.1:8000/synthesize_data", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${accessToken}`,
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
                 },
                 body: formData,
             });
 
-            await response.json()
-                .then(res => res.blob())
-                .then((blob) => {
-                    let file = window.URL.createObjectURL(blob);
-                    window.location.assign(file);
-                })
+            await response.json();
+                // .then(res => res.blob())
+                // .then((blob) => {
+                //     let file = window.URL.createObjectURL(blob);
+                //     window.location.assign(file);
+                // })
         } catch (error) {
             console.error(error);
         }
@@ -168,6 +175,16 @@ const UploadPage = () => {
                             disabled={loading}
                         />
                     </label>
+                </div>
+                <div>
+                    <div className="flex justify-center">
+                        <label htmlFor="input" ref={inputRef} className="block p-2 text-sm font-medium text-gray-900 dark:text-white">Do you have any specific requirements for the augmented data?</label>
+                        <input type="text" id="input" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    </div>
+                    <div className="flex justify-center">
+                        <label htmlFor="iter_count" ref={iterCountRef} className="block p-2 text-sm font-medium text-gray-900 dark:text-white">How many new rows would you like to generate? (MAX 200)</label>
+                        <input type="number" id="iter_count" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    </div>
                 </div>
                 <div className="flex justify-center">
                     <button

@@ -149,7 +149,7 @@ async def trigger_dag_synthesize(request: SynthesizeDataRequest):
 
 ### Gety csv from frontend and generate uuid for the file
 @app.post("/synthesize_data")
-async def synthesize_data(file: UploadFile,  input: str = Form(...), iter_count: int = Form(...)):
+async def synthesize_data(file: Annotated[UploadFile, Form()],  input: Annotated[str, Form()], iter_count: Annotated[int, Form()]):
     bucket_name = "synthesize_data"
     ### Upload the file path to the bucket
     filename = str(uuid.uuid4())
