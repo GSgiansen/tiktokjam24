@@ -31,7 +31,7 @@ const FileUploader = ({ project_id }: { project_id: string }) => {
 
       try {
         supabase.auth.getSession().then(({ data: { session } }) => {
-          fetch("http://128.199.130.222:8080/projects/uploadPredict", {
+          fetch("http://128.199.130.222:8000/projects/uploadPredict", {
             method: "POST",
             body: formData,
             headers: {
