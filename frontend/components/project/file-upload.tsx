@@ -40,7 +40,21 @@ const FileUploader = ({ project_id }: { project_id: string }) => {
           })
             .then((response) => response.json())
             .then((data) => {
-              console.log(data);
+              {
+                fetch(`http://128.199.130.222:8000/trigger_dag/`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session?.access_token}`, // Include your authorization token
+                  },
+                  body: JSON.stringify({
+                    dag_id: "add_predict_pipeline",
+                    conf: {
+                      project_id: project_id,
+                    },
+                  }),
+                });
+              }
             })
             .catch((error) => {
               console.error("Error:", error);
